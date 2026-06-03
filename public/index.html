@@ -675,16 +675,42 @@ qDefs.forEach(function(def){
 });
 
 
-function bindPhoto(inputId,previewId,zoneId,kind){
-  document.getElementById(inputId).onchange=function(e){
-    var f=e.target.files[0];if(!f)return;
-    var r=new FileReader();
-    r.onload=function(ev){
-      if(kind==='front'){photoMime=f.type||'image/jpeg';photoB64=ev.target.result.split(',')[1];}
-      else{interiorMime=f.type||'image/jpeg';interiorB64=ev.target.result.split(',')[1];}
-      var p=document.getElementById(previewId);p.src=ev.target.result;p.style.display='block';document.getElementById(zoneId).style.display='none';updateProg();
+function compressImage(file,kind){
+  return new Promise(function(resolve,reject){
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      var img=new Image();
+      img.onload=function(){
+        var max=kind==='front'?960:820;
+        var scale=Math.min(1,max/Math.max(img.width,img.height));
+        var w=Math.max(1,Math.round(img.width*scale));
+        var h=Math.max(1,Math.round(img.height*scale));
+        var canvas=document.createElement('canvas');
+        canvas.width=w;canvas.height=h;
+        var ctx=canvas.getContext('2d');
+        ctx.drawImage(img,0,0,w,h);
+        var dataUrl=canvas.toDataURL('image/jpeg',kind==='front'?0.68:0.62);
+        resolve({dataUrl:dataUrl,b64:dataUrl.split(',')[1],mime:'image/jpeg'});
+      };
+      img.onerror=reject;
+      img.src=ev.target.result;
     };
-    r.readAsDataURL(f);
+    reader.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function bindPhoto(inputId,previewId,zoneId,kind){
+  document.getElementById(inputId).onchange=async function(e){
+    var f=e.target.files[0];if(!f)return;
+    try{
+      var img=await compressImage(f,kind);
+      if(kind==='front'){photoMime=img.mime;photoB64=img.b64;}
+      else{interiorMime=img.mime;interiorB64=img.b64;}
+      var p=document.getElementById(previewId);p.src=img.dataUrl;p.style.display='block';document.getElementById(zoneId).style.display='none';updateProg();
+    }catch(err){
+      alert('à¸­à¹ˆà¸²à¸™à¸£à¸¹à¸›à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ à¸à¸£à¸¸à¸“à¸²à¸¥à¸­à¸‡à¹€à¸¥à¸·à¸­à¸à¸£à¸¹à¸›à¹ƒà¸«à¸¡à¹ˆà¸­à¸µà¸à¸„à¸£à¸±à¹‰à¸‡');
+    }
   };
 }
 bindPhoto('photo-in','photo-prev','uz','front');
