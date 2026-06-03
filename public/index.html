@@ -812,7 +812,7 @@ async function doAnalyze(){
          fixFree:(ar.fix||[])[0]||{title:'ตัดแต่งพุ่มไม้หน้าบ้าน',desc:'เปิดทางให้เห็นประตูหลักชัดเจน'},
          fixLocked:(ar.fix||[]).slice(1,4).map(function(f){return {title:f.title||'แนวทางปรับเพิ่มเติม',hint:f.desc||'ต้องวิเคราะห์ในที่จริง'};}),
          omen:ar.omen};
-    }catch(e){console.log('API fallback:',e.message);R=buildResult(SEL);R.observations.unshift({title:'ยังไม่ได้เชื่อมต่อผลอ่านภาพจริง',desc:'สาเหตุที่ตรวจพบ: '+e.message+' | คะแนนนี้เป็นผลประเมินเบื้องต้นจากตัวเลือก กรุณาตรวจ Environment Variable และการ deploy API'});}
+    }catch(e){console.log('API fallback:',e.message);R=buildResult(SEL);R.observations.unshift({title:'ระบบอ่านภาพจริงยังไม่สมบูรณ์',desc:'ตอนนี้ระบบแสดงผลประเมินเบื้องต้นให้ก่อน กรุณาลองใหม่อีกครั้งด้วยภาพหน้าบ้านที่ชัด หรือแนบเฉพาะภาพหน้าบ้านก่อน'});}
 
     await delay(500);stepDone('ls2','อ่านภาพบ้านแล้ว ✓');
     await delay(500);stepDone('ls3',steps[1][1]);
