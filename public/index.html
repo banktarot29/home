@@ -2,6 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
+<meta name="FENGSHUI_BUILD_VERSION" content="2026-06-03-api-debug-v3">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>ซินแสแบงค์ · ตรวจฮวงจุ้ยบ้านฟรี</title>
 <meta property="og:title" content="ตรวจฮวงจุ้ยบ้านฟรี · ซินแสแบงค์">
@@ -775,7 +776,7 @@ async function doAnalyze(){
     var R=null;
     try{
       var resp=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({photoB64:photoB64,photoMime:photoMime,interiorB64:interiorB64,interiorMime:interiorMime,type:SEL.type,dir:SEL.dir,env:SEL.env,details:collectDetails()})});
-      if(!resp.ok) throw new Error('backend '+resp.status);
+      if(!resp.ok){var errText=await resp.text();throw new Error('backend '+resp.status+' '+errText.slice(0,180));}
       var d=await resp.json();
       if(!d.ok||!d.result) throw new Error('bad response');
       // Map API result to our format
@@ -785,7 +786,7 @@ async function doAnalyze(){
          fixFree:(ar.fix||[])[0]||{title:'ตัดแต่งพุ่มไม้หน้าบ้าน',desc:'เปิดทางให้เห็นประตูหลักชัดเจน'},
          fixLocked:(ar.fix||[]).slice(1,4).map(function(f){return {title:f.title||'แนวทางปรับเพิ่มเติม',hint:f.desc||'ต้องวิเคราะห์ในที่จริง'};}),
          omen:ar.omen};
-    }catch(e){console.log('API fallback:',e.message);R=buildResult(SEL);R.observations.unshift({title:'ยังไม่ได้เชื่อมต่อผลอ่านภาพจริง',desc:'ระบบยังเรียก API วิเคราะห์ภาพไม่สำเร็จ คะแนนนี้เป็นผลประเมินเบื้องต้นจากตัวเลือก กรุณาตรวจ Environment Variable และการ deploy API'});}
+    }catch(e){console.log('API fallback:',e.message);R=buildResult(SEL);R.observations.unshift({title:'ยังไม่ได้เชื่อมต่อผลอ่านภาพจริง',desc:'สาเหตุที่ตรวจพบ: '+e.message+' | คะแนนนี้เป็นผลประเมินเบื้องต้นจากตัวเลือก กรุณาตรวจ Environment Variable และการ deploy API'});}
 
     await delay(500);stepDone('ls2','อ่านภาพบ้านแล้ว ✓');
     await delay(500);stepDone('ls3',steps[1][1]);
