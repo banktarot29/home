@@ -785,7 +785,7 @@ async function doAnalyze(){
          fixFree:(ar.fix||[])[0]||{title:'ตัดแต่งพุ่มไม้หน้าบ้าน',desc:'เปิดทางให้เห็นประตูหลักชัดเจน'},
          fixLocked:(ar.fix||[]).slice(1,4).map(function(f){return {title:f.title||'แนวทางปรับเพิ่มเติม',hint:f.desc||'ต้องวิเคราะห์ในที่จริง'};}),
          omen:ar.omen};
-    }catch(e){console.log('API fallback:',e.message);R=buildResult(SEL);R.observations.unshift({title:'โหมดตัวอย่างในเครื่อง',desc:'ตอนเปิดผ่าน file:// ระบบไม่สามารถเรียก API เพื่ออ่านภาพจริงได้ คะแนนนี้จึงเป็นคะแนนประเมินเบื้องต้นจากตัวเลือก ไม่ใช่ผลอ่านภาพจาก AI'});}
+    }catch(e){console.log('API fallback:',e.message);R=buildResult(SEL);R.observations.unshift({title:'ยังไม่ได้เชื่อมต่อผลอ่านภาพจริง',desc:'ระบบยังเรียก API วิเคราะห์ภาพไม่สำเร็จ คะแนนนี้เป็นผลประเมินเบื้องต้นจากตัวเลือก กรุณาตรวจ Environment Variable และการ deploy API'});}
 
     await delay(500);stepDone('ls2','อ่านภาพบ้านแล้ว ✓');
     await delay(500);stepDone('ls3',steps[1][1]);
@@ -854,10 +854,16 @@ function mkCardsFull(items,cid,cls){var c=document.getElementById(cid);c.innerHT
   document.getElementById('sec-promo').style.display='block';
   var serviceFirst=R.score<75;
   var promo=document.querySelector('#sec-promo .promo-box');
-  if(promo){promo.innerHTML=serviceFirst?'<div class="promo-tag">✦ บ้านคะแนนต่ำกว่า 75%</div><p class="promo-title">ควรให้ซินแสเข้าดูหน้างาน<br>เพื่อปรับแบบไม่ทุบ</p><p class="promo-desc">คะแนนระดับนี้มักมีจุดที่ภาพยังบอกไม่ครบ การดูพื้นที่จริงจะช่วยจัดลำดับจุดแก้ ให้เหมาะกับคนในบ้านและข้อจำกัดจริง</p><div class="promo-price"><span class="promo-amount">บริการจัดฮวงจุ้ย</span><span class="promo-unit">ดันเด่นกว่าหนังสือ</span></div><p class="promo-note">เหมาะสำหรับบ้านที่ต้องการผลลัพธ์ชัดและปรับเป็นระบบ</p><div class="promo-disc">📘 Ebook ยังเป็นตัวเสริมสำหรับทำความเข้าใจพื้นฐาน</div>':'<div class="promo-tag">✦ บ้านพื้นฐานดีเกิน 75%</div><p class="promo-title">ต่อยอดเองด้วย Ebook<br>จัดฮวงจุ้ยแบบไม่ทุบ</p><p class="promo-desc">บ้านกลุ่มนี้มีพื้นฐานดีอยู่แล้ว หนังสือจะช่วยให้เจ้าของบ้านดูแลจุดเล็กๆ และเสริมพลังงานต่อได้ด้วยตัวเอง</p><div class="promo-price"><span class="promo-amount">Ebook จัดฮวงจุ้ย</span><span class="promo-unit">ดันเด่นกว่าบริการหน้างาน</span></div><p class="promo-note">บริการเข้าดูบ้านยังมีให้เลือก หากต้องการวิเคราะห์เชิงลึก</p><div class="promo-disc">🏠 เหมาะกับบ้านที่อยากเสริมเพิ่ม ไม่ได้มีจุดเสี่ยงเร่งด่วน</div>';}
+  if(promo){promo.innerHTML=serviceFirst?'<div class="promo-tag">✦ แนะนำขั้นต่อไป</div><p class="promo-title">นัดดูหน้างาน<br>เพื่อปรับแบบไม่ทุบ</p><p class="promo-desc">ผลประเมินพบจุดที่ควรดูพื้นที่จริงเพิ่มเติม ซินแสแบงค์จะช่วยจัดลำดับจุดที่ควรปรับให้เหมาะกับบ้านหลังนี้</p><div class="promo-price"><span class="promo-amount">บริการจัดฮวงจุ้ย</span><span class="promo-unit">สอบถามรายละเอียดผ่าน LINE</span></div><p class="promo-note">เหมาะกับบ้านที่คะแนนต่ำกว่า 75% หรือมีจุดเสี่ยงที่ควรดูหน้างาน</p>':'<div class="promo-tag">✦ แนะนำขั้นต่อไป</div><p class="promo-title">ต่อยอดเองด้วย Ebook<br>จัดฮวงจุ้ยแบบไม่ทุบ</p><p class="promo-desc">บ้านมีพื้นฐานที่ต่อยอดได้ เจ้าของบ้านสามารถเริ่มเรียนรู้วิธีจัดพื้นที่และดูแลจุดเล็กๆ ได้ด้วยตัวเอง</p><div class="promo-price"><span class="promo-amount">Ebook จัดฮวงจุ้ย</span><span class="promo-unit">สั่งผ่าน LINE</span></div><p class="promo-note">เหมาะกับบ้านที่คะแนนตั้งแต่ 75% ขึ้นไป และต้องการแนวทางปรับเอง</p>';}
   document.getElementById('sec-cta-high').style.display='none';
   document.getElementById('sec-cta-mid').style.display='none';
   document.getElementById(serviceFirst?'sec-cta-high':'sec-cta-mid').style.display='block';
+  var anchor=document.getElementById('sec-frontpart')||document.getElementById('sec-good');
+  var body=document.querySelector('.res-body');
+  if(body&&anchor){
+    body.insertBefore(document.getElementById('sec-promo'),anchor);
+    body.insertBefore(document.getElementById(serviceFirst?'sec-cta-high':'sec-cta-mid'),anchor);
+  }
   show('res');
   setTimeout(initReveal,120);
 }
