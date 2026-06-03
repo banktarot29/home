@@ -78,6 +78,8 @@ export default async function handler(req, res) {
 ช่วยตรวจด้วยว่ารูปแบบที่ผู้ใช้เลือกตรงกับสิ่งที่เห็นในภาพหรือไม่ แล้ววิเคราะห์เป็น 2 part ชัดเจน: 1) หน้าบ้านภาพรวม 2) ภาพรวมในบ้าน ใช้ทิศหน้าบ้านแบบคร่าวๆ ตามที่ผู้ใช้เลือก ไม่ต้องลงลึกถึงองศา ถ้าไม่มีภาพภายในบ้านให้บอกว่าเป็นข้อจำกัดของการประเมิน เน้นความเฉพาะเจาะจงจากภาพ เช่น ประตูหลัก ทางเดิน รั้ว สี ต้นไม้ หลังคา ความโปร่ง/ทึบ เฟอร์นิเจอร์หลัก ทางเดินภายใน และสิ่งกีดขวาง หากจุดไหนภาพไม่ชัดให้ระบุว่าไม่สามารถยืนยันจากภาพได้`;
 
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 24000);
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -85,9 +87,10 @@ export default async function handler(req, res) {
         'x-api-key': ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01',
       },
+      signal: controller.signal,
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 1800,
+        max_tokens: 900,
         system: systemPrompt,
         messages: [{
           role: 'user',
@@ -103,6 +106,8 @@ export default async function handler(req, res) {
         }]
       })
     });
+
+    clearTimeout(timeout);
 
     if (!response.ok) {
       const err = await response.text();
@@ -120,6 +125,8 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error('Handler error:', err);
+    if (err.name === 'AbortError') return res.status(504).json({ error: 'AI analysis timeout' });
     return res.status(500).json({ error: err.message });
   }
 }
+
