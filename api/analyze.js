@@ -3,6 +3,87 @@
 
 export const config = { maxDuration: 30 };
 
+
+const compactSystemPrompt = `คุณคือซินแสแบงค์ วิเคราะห์ฮวงจุ้ยจากภาพและข้อมูลที่ผู้ใช้เลือกแบบเข้าใจง่าย ไม่ฟันธงเกินจริง
+
+ตอบเป็น JSON ที่ถูกต้องเท่านั้น ห้ามมี markdown ห้ามมีคำอธิบายนอก JSON
+ใช้ double quotes ทุก key และทุก string เท่านั้น
+ห้ามใส่ object ใน array ให้ array เป็น string ล้วน เพื่อลด JSON แตก
+
+Schema ที่ต้องตอบ:
+{
+  "score": 0,
+  "headline": "",
+  "scoreLabel": "",
+  "typeCheck": "",
+  "frontPart": "",
+  "interiorPart": "",
+  "observations": ["", "", ""],
+  "good": ["", "", ""],
+  "bad": ["", "", ""],
+  "fix": ["", "", ""],
+  "omen": "",
+  "needsExpert": true
+}
+
+กติกาการให้คะแนน:
+- ใช้ภาพเป็นหลัก ไม่ใช่แค่ตัวเลือก
+- บ้านโทรม รก ทึบ สีลอก ทางเข้าถูกบัง หรือภาพไม่ชัด ควรได้ประมาณ 35-62
+- 75 ขึ้นไปให้เฉพาะบ้านที่ดูแลดี ทางเข้าโล่ง แสงดี ไม่มีสิ่งกีดขวางเด่น และข้อมูลสอดคล้องกับภาพ
+- ถ้ารูปแบบที่อยู่อาศัยที่เลือกไม่ตรงกับภาพ ให้บอกใน typeCheck และลดคะแนน
+- ถ้าไม่มีภาพภายในบ้าน ให้ interiorPart บอกข้อจำกัดอย่างสุภาพ
+- score ต่ำกว่า 75 ให้ needsExpert เป็น true
+- ท้าย omen ให้ระบุว่าเป็นการวิเคราะห์จากข้อมูลที่ได้ อาจคลาดเคลื่อนได้เพราะไม่ได้ดูหน้างานจริง
+`;
+
+function extractJson(raw) {
+  const text = String(raw || '').replace(/\`\`\`json|\`\`\`/g, '').trim();
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start < 0 || end < start) throw new Error('No JSON object found');
+  const json = text.slice(start, end + 1).replace(/,\s*([}\]])/g, '$1');
+  return JSON.parse(json);
+}
+
+function cleanText(value) {
+  return String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
+}
+
+function item(value, fallbackTitle) {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return {
+      title: cleanText(value.title || fallbackTitle),
+      desc: cleanText(value.desc || value.text || value.detail || '')
+    };
+  }
+  return { title: fallbackTitle, desc: cleanText(value) };
+}
+
+function itemList(values, fallbackTitle, max) {
+  const arr = Array.isArray(values) ? values : [];
+  return arr.map((value, index) => item(value, fallbackTitle + ' ' + (index + 1)))
+    .filter(v => v.title || v.desc)
+    .slice(0, max);
+}
+
+function normalizeAiResult(result, hasInterior) {
+  const score = Math.max(0, Math.min(100, Math.round(Number(result.score) || 60)));
+  return {
+    score,
+    headline: cleanText(result.headline) || 'บ้านหลังนี้มีจุดที่ควรดูเพิ่มเติม',
+    scoreLabel: cleanText(result.scoreLabel) || (score >= 75 ? 'ดีมาก' : score >= 60 ? 'ดี' : score >= 48 ? 'พอใช้' : 'ควรตรวจเพิ่มเติม'),
+    typeCheck: item(result.typeCheck, 'ตรวจรูปแบบที่อยู่อาศัย'),
+    frontPart: item(result.frontPart, 'หน้าบ้านภาพรวม'),
+    interiorPart: item(result.interiorPart || (hasInterior ? '' : 'ยังไม่ได้แนบภาพภายในบ้าน จึงประเมินภายในจากข้อมูลเบื้องต้นเท่านั้น'), 'ภาพรวมภายในบ้าน'),
+    observations: itemList(result.observations, 'สิ่งที่เห็นจากภาพ', 4),
+    good: itemList(result.good, 'จุดเด่น', 3),
+    bad: itemList(result.bad, 'จุดที่ควรระวัง', 4),
+    fix: itemList(result.fix, 'วิธีปรับแบบไม่ทุบ', 4),
+    omen: cleanText(result.omen) || 'วิเคราะห์จากรายละเอียดตามข้อมูลที่ได้รับ อาจมีความคลาดเคลื่อนได้ เนื่องจากไม่ได้ไปดูหน้างานจริง',
+    needsExpert: result.needsExpert === true || score < 75
+  };
+}
+
 export default async function handler(req, res) {
   // CORS headers — allow any origin (เพื่อให้ claude.ai artifact และ domain จริงเรียกได้)
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -90,8 +171,8 @@ export default async function handler(req, res) {
       signal: controller.signal,
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 900,
-        system: systemPrompt,
+        max_tokens: 700,
+        system: compactSystemPrompt,
         messages: [{
           role: 'user',
           content: [
@@ -117,10 +198,16 @@ export default async function handler(req, res) {
 
     const data = await response.json();
     const raw = data.content.map(i => i.text || '').join('');
-    const match = raw.match(/\{[\s\S]*\}/);
-    if (!match) return res.status(502).json({ error: 'Invalid response format' });
 
-    const result = JSON.parse(match[0]);
+    let parsed;
+    try {
+      parsed = extractJson(raw);
+    } catch (parseErr) {
+      console.error('Invalid AI JSON:', raw.slice(0, 1800));
+      return res.status(502).json({ error: 'Invalid AI JSON', detail: parseErr.message });
+    }
+
+    const result = normalizeAiResult(parsed, !!interiorB64);
     return res.status(200).json({ ok: true, result });
 
   } catch (err) {
