@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="FENGSHUI_BUILD_VERSION" content="2026-06-08-check-ready">
+<meta name="FENGSHUI_BUILD_VERSION" content="2026-06-08-pro-result-v2">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>ซินแสแบงค์ · ตรวจฮวงจุ้ยบ้านฟรี</title>
 <meta property="og:title" content="ตรวจฮวงจุ้ยบ้านฟรี · ซินแสแบงค์">
@@ -560,11 +560,7 @@ body.result-mode .float-actions{display:flex}
       <div id="r-fix-free"></div>
       <div id="r-fix-locked"></div>
     </div>
-    <div class="rv rsec" id="sec-omen">
-      <p class="rsec-title"><span class="ri">👁</span>ภาพรวมฮวงจุ้ยบ้านหลังนี้</p>
-      <div class="omen-card"><span class="omen-q">❝</span><div class="omen-glow"></div><p id="r-omen"></p></div>
-      <div class="result-disclaimer" id="r-disclaimer">วิเคราะห์จากรายละเอียดตามข้อมูลที่ได้รับ อาจมีความคลาดเคลื่อนได้ เนื่องจากยังไม่ได้ไปดูหน้างานจริง</div>
-      <div class="res-testi" id="r-testi" style="display:none">
+    <div class="res-testi" id="r-testi" style="display:none">
         <div class="res-testi-av">👨</div>
         <div style="flex:1">
           <div class="res-testi-stars">★★★★★</div>
@@ -572,7 +568,7 @@ body.result-mode .float-actions{display:flex}
           <span class="res-testi-name">คุณวิชัย · บ้านเดี่ยว กรุงเทพฯ</span>
         </div>
       </div>
-    </div>
+    <div class="result-disclaimer" id="r-disclaimer">วิเคราะห์จากรายละเอียดตามข้อมูลที่ได้รับ อาจมีความคลาดเคลื่อนได้ เนื่องจากยังไม่ได้ไปดูหน้างานจริง</div>
     <div class="rv" id="sec-promo" style="display:none">
       <div class="promo-box">
         <div class="promo-tag">✦ ข้อเสนอพิเศษ</div>
@@ -773,28 +769,30 @@ function buildResult(sel){
   return{
     score:score,needsExpert:needsExpert,
     observations:[
-      {title:'ภาพรวมหน้าบ้าน',desc:'จากข้อมูลที่เลือก บ้านประเภท '+sel.type+' หันออก '+sel.dir+' อยู่ในสภาพแวดล้อม '+sel.env+' และเป้าหมายหลักคือ '+sel.goal},
-      {title:'ตรวจรูปแบบที่อยู่อาศัย',desc:'โหมดตัวอย่างนี้ยังไม่ได้ใช้ AI อ่านภาพจริง จึงยังยืนยันไม่ได้ว่ารูปแบบที่เลือกตรงกับภาพหรือไม่ เมื่อนำขึ้นระบบที่มี API ระบบจะให้ AI ตรวจซ้ำจากภาพ'},
-      {title:'จุดที่ควรดูในภาพ',desc:'ควรพิจารณาความชัดของประตูหลัก ทางเดินเข้า รั้ว ต้นไม้ และสิ่งกีดขวางหน้าบ้านร่วมกัน'},
+      {title:'ภาพรวมจากข้อมูลที่เลือก',desc:'บ้านประเภท '+sel.type+' หันออก '+sel.dir+' อยู่ในสภาพแวดล้อม '+sel.env+' และเจ้าของบ้านอยากเน้นเรื่อง '+sel.goal+' จึงควรเริ่มจากการจัดหน้าบ้านให้ทางเข้าอ่านง่ายและใช้งานสะดวกก่อน'},
+      {title:'ตรวจรูปแบบที่อยู่อาศัย',desc:'รอบนี้ยังอ่านภาพแบบละเอียดไม่สำเร็จ จึงยืนยันจากภาพไม่ได้ว่ารูปแบบที่เลือกตรงกับบ้านจริงหรือไม่ ควรลองใหม่ด้วยภาพหน้าบ้านที่ชัดขึ้น'},
+      {title:'จุดที่ควรดูจากหน้าบ้าน',desc:'ให้ดูว่าทางเดินเข้าบ้านเปิดโล่งไหม ประตูหลักมองเห็นชัดหรือเปล่า และมีของวางบีบทางเข้าจนทำให้หน้าบ้านดูอึดอัดหรือไม่'},
       {title:'ข้อจำกัดของการวิเคราะห์',desc:'หากภาพเห็นหน้าบ้านหรือภายในบ้านไม่ครบ รายงานนี้จะเป็นการประเมินเบื้องต้นและควรตรวจพื้นที่จริงเพิ่มเติม'}],
-    frontPart:{title:'หน้าบ้านภาพรวม',desc:'หน้าบ้านเป็นจุดรับพลังหลักของบ้าน ควรดูความโปร่งของทางเข้า ประตู รั้ว ต้นไม้ และทิศที่หันหาเป็นอันดับแรก'},
-    interiorPart:{title:'ภาพรวมภายในบ้าน',desc:interiorB64?'ภาพภายในช่วยประเมินการกระจายพลังหลังผ่านประตูหลักเข้าสู่พื้นที่ใช้งานจริง':'ยังไม่ได้แนบภาพภายในบ้าน จึงประเมินภายในจากข้อมูลเบื้องต้นเท่านั้น'},
-    headline:score>=70?'บ้านมีพื้นฐานพอใช้ แต่ควรตรวจภาพด้วย API':score>=55?'บ้านมีภาพรวมที่ควรดูบางจุดเพิ่มเติม':'บ้านมีบางจุดที่ควรตรวจหน้างานก่อนปรับ',
+    frontPart:{title:'หน้าบ้านภาพรวม',desc:'หน้าบ้านคือจุดแรกที่บ้านรับคน รับลม และรับสายตาเข้ามา หากทางเข้าอ่านไม่ชัดหรือมีของบังมากเกินไป บ้านจะดูอึดอัดตั้งแต่ก่อนเข้าประตู จุดแรกที่ควรทำคือเปิดทางเดินและทำให้ประตูหลักเด่นขึ้น'},
+    interiorPart:{title:'ภาพรวมภายในบ้าน',desc:interiorB64?'ภาพภายในช่วยดูว่าพอเข้าประตูแล้วทางเดิน แสง และการวางของส่งต่อความรู้สึกในบ้านอย่างไร':'ยังไม่ได้แนบภาพภายในบ้าน จึงยังไม่สรุปภายในแทนหน้างานจริง แนะนำให้ถ่ายโถงแรกหลังเปิดประตูและทางเดินหลักเพิ่ม'},
+    headline:score>=70?'หน้าบ้านมีพื้นฐานใช้งานได้ แต่ยังควรจัดให้ชัดขึ้น':score>=55?'หน้าบ้านยังมีจุดติดขัดที่ควรจัดให้โปร่งขึ้น':'หน้าบ้านควรตรวจหน้างานก่อนวางแผนปรับ',
     scoreLabel:score>=75?'ดีมาก':score>=60?'ดี':score>=48?'พอใช้':'ควรตรวจเพิ่มเติม',
     good:[
-      {title:'รูปทรงบ้านดูเป็นระเบียบ',desc:'ภาพรวมที่สมดุลช่วยให้ประเมินทางเข้าและการใช้งานได้ง่ายขึ้น ควรดูร่วมกับพื้นที่จริงก่อนสรุปผล'},
-      {title:sel.dir+' · ใช้เป็นข้อมูลตั้งต้น',desc:'ทิศหน้าบ้านช่วยให้วางกรอบการประเมินได้ แต่ยังควรดูแสง ทางเข้า และการใช้งานจริงร่วมด้วย'},
-      {title:'มีจุดที่ต่อยอดได้',desc:'บางส่วนของบ้านอาจปรับให้น่าใช้งานขึ้นได้ด้วยการจัดพื้นที่และลดสิ่งกีดขวาง โดยไม่จำเป็นต้องเริ่มจากงานใหญ่'}
+      {title:'ยังมีพื้นที่ให้จัดหน้าบ้านได้',desc:'ถ้าหน้าบ้านมีพื้นที่ว่างพอ การจัดของและเปิดทางเดินจะช่วยให้บ้านดูเบาขึ้นได้โดยไม่ต้องเริ่มจากงานใหญ่'},
+      {title:sel.dir+' เป็นข้อมูลตั้งต้น',desc:'ทิศหน้าบ้านช่วยให้วางกรอบได้ แต่การปรับจริงควรดูร่วมกับทางเดิน ประตูหลัก แสง และของที่อยู่หน้าบ้าน'},
+      {title:'ปรับแบบไม่ทุบได้',desc:'หลายจุดเริ่มจากการเก็บ ย้าย เปิด และจัดลำดับของหน้าบ้านให้ดีขึ้นก่อน ไม่จำเป็นต้องรื้อหรือแก้โครงสร้างทันที'}
 ].filter(Boolean).slice(0,3),
     bad:[
       {title:'หน้าบ้านดูทึบหรือปิดเกินไป',desc:'ถ้าทางเข้าเห็นไม่ชัด อาจทำให้บ้านดูอึดอัดและใช้งานไม่สะดวก ควรดูแสง รั้ว และทางเดินร่วมกัน'},
       {title:'ต้นไม้หรือของหน้าบ้านอาจบังทางเข้า',desc:'ถ้าประตูหลักหรือทางเดินถูกบังมากเกินไป เจ้าของบ้านและแขกอาจมองทางเข้าไม่ชัด ควรจัดให้โปร่งขึ้นก่อน'},
-      {title:'มีจุดที่ควรตรวจเพิ่ม',desc:'บางจุดอาจต้องดูภาพมุมอื่นหรือดูพื้นที่จริงก่อน จึงจะบอกได้ว่าควรปรับอย่างไรให้เหมาะกับบ้านหลังนี้'},].filter(Boolean).slice(0,4),
-    fixFree:{title:'จัดหน้าบ้านให้เห็นทางเข้าได้ชัดขึ้น',desc:'เริ่มจากเก็บของที่บังทางเดิน ตัดแต่งต้นไม้ และเปิดมุมมองไปที่ประตูหลัก วิธีนี้ทำได้ง่ายและไม่ต้องรื้อบ้าน'},
+      {title:'ยังต้องดูภาพจริงให้ครบ',desc:'ถ้าต้องวางแผนให้แม่น ควรเห็นตำแหน่งประตูหลัก ทางเดิน ระดับพื้น ของที่วางด้านหน้า และพื้นที่หลังประตูร่วมกัน'},].filter(Boolean).slice(0,4),
+    fixFree:[{title:'เปิดทางเข้าหน้าบ้านให้ชัด',desc:'เก็บของที่บังทางเดินออกก่อน โดยเฉพาะของที่วางชิดประตูหรือขอบทางเข้า ให้เหลือเส้นทางเดินที่มองเห็นง่ายตั้งแต่หน้าบ้านถึงประตูหลัก'},{title:'จัดของสองข้างให้เบาลง',desc:'แยกของที่จำเป็นกับไม่จำเป็น แล้วย้ายของที่ดูหนักหรือรกไปไว้ด้านข้างที่ไม่บังสายตา หน้าบ้านจะดูโล่งขึ้นโดยไม่ต้องทุบหรือรื้อ'}],
     fixLocked:[
-      {title:'การจัดวางเฟอร์นิเจอร์ตามทิศพลังงาน',hint:'ต้องวิเคราะห์ในที่จริง'},
-      {title:'การเสริมธาตุและสีที่ถูกต้องสำหรับบ้าน',hint:'ต้องวิเคราะห์ในที่จริง'},
-      {title:'จุดวางสิ่งของมงคลที่ส่งผลจริง',hint:'ต้องวิเคราะห์ในที่จริง'},
+      {title:'ตำแหน่งประตูหลักกับทิศบ้าน',hint:'ควรให้ซินแสดูร่วมกับพื้นที่จริง'},
+      {title:'ระดับพื้นและทางเดินเข้าบ้าน',hint:'ควรดูว่าทางเข้าบีบหรือเปิดรับดีแค่ไหน'},
+      {title:'ของหนักและจุดรกหน้าบ้าน',hint:'ควรจัดลำดับว่าจะย้าย พราง หรือเก็บจุดไหนก่อน'},
+      {title:'สี วัสดุ และจุดเสริมหน้าบ้าน',hint:'ควรเลือกให้เข้ากับทิศและสภาพบ้าน'},
+      {title:'ภาพรวมหลังประตูหลัก',hint:'ควรดูต่อว่าพอเข้าบ้านแล้วติดขัดตรงไหน'}
     ],
     omen:pickOmen(sel,0,score)
   };
@@ -825,7 +823,7 @@ async function doAnalyze(){
          fixFree:(ar.fix||[]).slice(0,2),
          fixLocked:(ar.fix||[]).slice(2,8).map(function(f){return {title:f.title||'จุดที่ควรให้ซินแสดูต่อ',hint:f.desc||'ควรวิเคราะห์ร่วมกับพื้นที่จริง'};}),
          omen:ar.omen};
-    }catch(e){console.log('API fallback:',e.message);trackEvent('fengshui_analyze_fallback',{reason:String(e.message||'').slice(0,80)});R=buildResult(SEL);R.observations.unshift({title:'ระบบอ่านภาพจริงยังไม่สมบูรณ์',desc:'ตอนนี้ระบบแสดงผลประเมินเบื้องต้นให้ก่อน กรุณาลองใหม่อีกครั้งด้วยภาพหน้าบ้านที่ชัด หรือแนบเฉพาะภาพหน้าบ้านก่อน'});}
+    }catch(e){console.log('API fallback:',e.message);trackEvent('fengshui_analyze_fallback',{reason:String(e.message||'').slice(0,80)});R=buildResult(SEL);R.observations.unshift({title:'รอบนี้ยังอ่านภาพละเอียดไม่สำเร็จ',desc:'รายงานนี้จึงเป็นภาพรวมเบื้องต้นจากข้อมูลที่เลือก หากต้องการผลที่เจาะจากภาพจริง แนะนำให้ลองแนบภาพหน้าบ้านที่ชัดอีกครั้ง โดยให้เห็นประตูหลัก ทางเดิน และพื้นที่หน้าบ้านครบ'});}
 
     await delay(500);stepDone('ls2','อ่านภาพบ้านแล้ว ✓');
     await delay(500);stepDone('ls3',steps[1][1]);
@@ -900,7 +898,7 @@ function mkCardsFull(items,cid,cls){var c=document.getElementById(cid);c.innerHT
   fn.innerHTML='<span class="fix-note-icon">💡</span><p>ยังมีอีกหลายจุดที่ปรับให้ดีขึ้นกว่านี้ได้ แต่ต้องดูที่พื้นที่หน้างานจริง เพื่อวิเคราะห์ให้ตรงกับพลังงานและทิศทางเฉพาะของบ้านหลังนี้</p>';
   fl.appendChild(fn);
 
-  document.getElementById('r-omen').textContent=R.omen||'';
+  var omenEl=document.getElementById('r-omen'); if(omenEl){omenEl.textContent=R.omen||'';}
   var so=document.getElementById('r-score-omen'); if(so){so.textContent=R.omen||R.headline||'';}
   document.getElementById('r-testi').style.display='flex';
   document.getElementById('sec-promo').style.display='block';
@@ -910,7 +908,7 @@ function mkCardsFull(items,cid,cls){var c=document.getElementById(cid);c.innerHT
   document.getElementById('sec-cta-high').style.display='none';
   document.getElementById('sec-cta-mid').style.display='none';
   document.getElementById(serviceFirst?'sec-cta-high':'sec-cta-mid').style.display='block';
-  var anchor=document.getElementById('sec-omen')||document.getElementById('r-testi');
+  var anchor=document.getElementById('r-testi')||document.getElementById('r-disclaimer');
   var body=document.querySelector('.res-body');
   if(body&&anchor){
     body.insertBefore(document.getElementById('sec-promo'),anchor);
