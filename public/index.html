@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="FENGSHUI_BUILD_VERSION" content="2026-06-08-pro-result-v2">
+<meta name="FENGSHUI_BUILD_VERSION" content="2026-06-08-tool-share-v1">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>ซินแสแบงค์ · ตรวจฮวงจุ้ยบ้านฟรี</title>
 <meta property="og:title" content="ตรวจฮวงจุ้ยบ้านฟรี · ซินแสแบงค์">
@@ -318,6 +318,18 @@ body.result-mode .float-actions{display:flex}
 .btn-share{width:100%;padding:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.15);border-radius:9px;color:rgba(255,255,255,.55);font-family:'Sarabun',sans-serif;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .2s}
 .btn-share:hover{background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.28)}
 .share-ok{font-size:11px;color:var(--good);text-align:center;min-height:16px;margin-top:3px}
+.share-panel{position:fixed;inset:0;z-index:80;background:rgba(3,8,17,.72);backdrop-filter:blur(12px);display:none;align-items:center;justify-content:center;padding:18px}
+.share-panel.show{display:flex}
+.share-sheet{width:min(420px,100%);background:#111821;border:1px solid rgba(201,168,76,.35);border-radius:14px;box-shadow:0 24px 80px rgba(0,0,0,.5);padding:16px;color:#fff}
+.share-sheet-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px}
+.share-sheet h3{font-size:17px;margin:0 0 3px;color:#fff}
+.share-sheet p{font-size:12.5px;color:rgba(255,255,255,.6);line-height:1.6;margin:0}
+.share-x{width:34px;height:34px;border-radius:999px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.04);color:#fff;cursor:pointer}
+.share-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}
+.share-grid button,.share-grid a{min-height:48px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.055);color:#fff;font-family:'Sarabun',sans-serif;font-size:13px;cursor:pointer;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;text-align:center}
+.share-grid .gold{grid-column:1/-1;background:linear-gradient(135deg,#a87b1d,#e7ca75,#a87b1d);color:#07111d;font-weight:700}
+.share-grid button:hover,.share-grid a:hover{border-color:rgba(201,168,76,.45);background:rgba(201,168,76,.1)}
+.share-note{font-size:11.5px;color:rgba(255,255,255,.45);line-height:1.55;margin-top:11px}
 .btn-restart{display:block;width:100%;margin-top:10px;background:none;border:.5px solid rgba(255,255,255,.1);color:rgba(255,255,255,.28);font-family:'Sarabun',sans-serif;font-size:12.5px;padding:10px;border-radius:9px;cursor:pointer;transition:all .2s;text-align:center}
 .btn-restart:hover{color:rgba(255,255,255,.6);border-color:rgba(255,255,255,.24)}
 </style>
@@ -921,14 +933,63 @@ function mkCardsFull(items,cid,cls){var c=document.getElementById(cid);c.innerHT
 function delay(ms){return new Promise(function(r){setTimeout(r,ms)});}
 function stepDone(id,txt){var el=document.getElementById(id);el.classList.add('done');el.querySelector('.lstep-ico').textContent='✓';document.getElementById('lst').textContent=txt;}
 
-function doShare(){
+function shareText(){
+  var hl=document.getElementById('r-headline').textContent || 'ผลตรวจฮวงจุ้ยบ้าน';
+  var sc=document.getElementById('r-score').textContent || '-';
+  var lbl=document.getElementById('r-label').textContent || '';
+  var omen=document.getElementById('r-score-omen').textContent || '';
+  return 'ผลตรวจฮวงจุ้ยบ้าน · ซินแสแบงค์\n\n'+hl+'\nคะแนนฮวงจุ้ยบ้าน: '+sc+'/100 ('+lbl+')\n\n'+omen+'\n\nลองประเมินบ้านของคุณเบื้องต้นได้ที่นี่\nhttps://lin.ee/qLCFQpj';
+}
+function openSharePanel(){
   trackEvent('fengshui_share_click',{});
-  var hl=document.getElementById('r-headline').textContent;
-  var sc=document.getElementById('r-score').textContent;
-  var lbl=document.getElementById('r-slbl').textContent;
-  var txt='🏠 ผลตรวจฮวงจุ้ยบ้าน · ซินแสแบงค์\n\n"'+hl+'"\nคะแนนฮวงจุ้ยบ้าน: '+sc+'/100 ('+lbl+')\n\nลองประเมินบ้านของคุณเบื้องต้นได้ที่นี่\n💬 LINE: @sinsaebank\nhttps://lin.ee/qLCFQpj';
-  function ok(){['sm-high','sm-mid'].forEach(function(id){var e=document.getElementById(id);if(e){e.textContent='✓ คัดลอกแล้ว แชร์ได้เลย!';setTimeout(function(){e.textContent=''},3500);}});}
-  if(navigator.share){navigator.share({title:'ผลฮวงจุ้ยบ้านของฉัน',text:txt}).then(ok).catch(function(e){if(e.name!=='AbortError')clip(txt,ok);});}else clip(txt,ok);
+  var panel=document.getElementById('share-panel');
+  if(panel) panel.classList.add('show');
+}
+function closeSharePanel(){var panel=document.getElementById('share-panel'); if(panel) panel.classList.remove('show');}
+function shareOk(msg){['sm-high','sm-mid','share-status'].forEach(function(id){var e=document.getElementById(id);if(e){e.textContent=msg||'พร้อมแชร์แล้ว';setTimeout(function(){e.textContent=''},3500);}});}
+function doShare(){openSharePanel();}
+function copyShareText(){clip(shareText(),function(){shareOk('คัดลอกข้อความแล้ว');});}
+function shareTo(channel){
+  var text=encodeURIComponent(shareText());
+  var url=encodeURIComponent(location.href);
+  var target='';
+  if(channel==='facebook') target='https://www.facebook.com/sharer/sharer.php?u='+url+'&quote='+text;
+  if(channel==='line') target='https://social-plugins.line.me/lineit/share?url='+url+'&text='+text;
+  if(target) window.open(target,'_blank','noopener,noreferrer,width=680,height=620');
+}
+function wrapCanvasText(ctx,text,x,y,maxWidth,lineHeight,maxLines){
+  var words=String(text||'').split(/\s+/), line='', lines=[];
+  words.forEach(function(w){var test=line?line+' '+w:w; if(ctx.measureText(test).width>maxWidth && line){lines.push(line); line=w;}else line=test;});
+  if(line) lines.push(line);
+  lines=lines.slice(0,maxLines||99);
+  lines.forEach(function(l,i){ctx.fillText(l,x,y+i*lineHeight);});
+  return y+lines.length*lineHeight;
+}
+function makeShareCanvas(){
+  var c=document.createElement('canvas'), ctx=c.getContext('2d');
+  c.width=1080; c.height=1350;
+  var g=ctx.createLinearGradient(0,0,0,c.height); g.addColorStop(0,'#07111d'); g.addColorStop(1,'#111821'); ctx.fillStyle=g; ctx.fillRect(0,0,c.width,c.height);
+  ctx.strokeStyle='rgba(201,168,76,.55)'; ctx.lineWidth=3; ctx.strokeRect(42,42,996,1266);
+  ctx.fillStyle='#d9b85f'; ctx.font='700 34px Sarabun, sans-serif'; ctx.fillText('ผลตรวจฮวงจุ้ยบ้าน · ซินแสแบงค์',70,115);
+  ctx.fillStyle='#fff'; ctx.font='700 62px Sarabun, sans-serif'; wrapCanvasText(ctx,document.getElementById('r-headline').textContent,70,195,900,78,2);
+  ctx.beginPath(); ctx.arc(185,390,92,0,Math.PI*2); ctx.strokeStyle='#d9b85f'; ctx.lineWidth=14; ctx.stroke(); ctx.fillStyle='#d9b85f'; ctx.font='700 64px Sarabun, sans-serif'; ctx.textAlign='center'; ctx.fillText(document.getElementById('r-score').textContent,185,413); ctx.textAlign='left';
+  ctx.fillStyle='rgba(255,255,255,.78)'; ctx.font='700 30px Sarabun, sans-serif'; ctx.fillText(document.getElementById('r-label').textContent,305,360);
+  ctx.fillStyle='rgba(255,255,255,.55)'; ctx.font='24px Sarabun, sans-serif'; ctx.fillText('วิเคราะห์คะแนนฮวงจุ้ยบ้าน จาก 100 คะแนน',305,400);
+  ctx.fillStyle='rgba(255,255,255,.88)'; ctx.font='700 30px Sarabun, sans-serif'; ctx.fillText('ภาพรวมฮวงจุ้ยบ้านหลังนี้',70,560);
+  ctx.fillStyle='rgba(255,255,255,.76)'; ctx.font='27px Sarabun, sans-serif'; var next=wrapCanvasText(ctx,document.getElementById('r-score-omen').textContent,70,615,900,44,8);
+  ctx.fillStyle='rgba(255,255,255,.55)'; ctx.font='22px Sarabun, sans-serif'; wrapCanvasText(ctx,'วิเคราะห์จากข้อมูลและภาพที่ได้รับ อาจคลาดเคลื่อนได้ เพราะยังไม่ได้ไปดูหน้างานจริง',70,next+55,900,36,3);
+  ctx.fillStyle='#d9b85f'; ctx.font='700 30px Sarabun, sans-serif'; ctx.fillText('ปรึกษาซินแสแบงค์ผ่าน LINE',70,1195);
+  ctx.fillStyle='rgba(255,255,255,.8)'; ctx.font='26px Sarabun, sans-serif'; ctx.fillText('https://lin.ee/qLCFQpj',70,1240);
+  return c;
+}
+function canvasBlob(canvas){return new Promise(function(resolve){canvas.toBlob(resolve,'image/png',.92);});}
+async function shareAsImage(){
+  var canvas=makeShareCanvas(), blob=await canvasBlob(canvas), file=new File([blob],'fengshui-result.png',{type:'image/png'});
+  if(navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){try{await navigator.share({files:[file],title:'ผลตรวจฮวงจุ้ยบ้าน'}); shareOk('แชร์ภาพแล้ว'); return;}catch(e){if(e.name==='AbortError')return;}}
+  downloadShareImage();
+}
+function downloadShareImage(){
+  var a=document.createElement('a'); a.href=makeShareCanvas().toDataURL('image/png'); a.download='fengshui-result.png'; a.click(); shareOk('ดาวน์โหลดรูปแล้ว');
 }
 function clip(t,cb){if(navigator.clipboard){navigator.clipboard.writeText(t).then(cb).catch(function(){leg(t,cb)});}else leg(t,cb);}
 function leg(t,cb){var x=document.createElement('textarea');x.value=t;x.style.cssText='position:fixed;opacity:0;top:0;left:0';document.body.appendChild(x);x.select();try{document.execCommand('copy');cb();}catch(e){}document.body.removeChild(x);}
@@ -947,6 +1008,26 @@ function resetAll(){
   show('land');
 }
 </script>
+<div class="share-panel" id="share-panel" onclick="if(event.target===this)closeSharePanel()">
+  <div class="share-sheet" role="dialog" aria-modal="true" aria-label="แชร์ผลวิเคราะห์">
+    <div class="share-sheet-head">
+      <div>
+        <h3>แชร์ผลวิเคราะห์</h3>
+        <p>แนะนำให้แชร์เป็นภาพก่อน จะดูเรียบร้อยกว่า และเพื่อนเห็นคะแนนกับภาพรวมได้ทันที</p>
+      </div>
+      <button class="share-x" type="button" onclick="closeSharePanel()">×</button>
+    </div>
+    <div class="share-grid">
+      <button class="gold" type="button" onclick="shareAsImage()">ดาวน์โหลด/แชร์เป็นภาพ</button>
+      <button type="button" onclick="shareTo('facebook')">Facebook</button>
+      <button type="button" onclick="shareTo('line')">LINE</button>
+      <button type="button" onclick="downloadShareImage()">IG: โหลดรูปไปลงสตอรี่</button>
+      <button type="button" onclick="copyShareText()">คัดลอกข้อความ</button>
+    </div>
+    <p class="share-note">Instagram ยังไม่เปิดให้เว็บโพสต์ตรงได้ วิธีที่เนียนสุดคือโหลดรูป แล้วอัพขึ้น Story/Reels เอง</p>
+    <p class="share-ok" id="share-status"></p>
+  </div>
+</div>
 <div class="float-actions" id="float-actions" aria-label="แชร์และปรึกษา">
   <button type="button" onclick="doShare()" title="แชร์ผลลัพธ์">↗</button>
   <a class="urgent" href="https://lin.ee/qLCFQpj" target="_blank" rel="noopener" onclick="trackEvent('fengshui_line_click',{from:this.textContent.trim().slice(0,40)})" title="ปรึกษาผ่าน LINE">💬</a>
