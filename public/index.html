@@ -554,9 +554,6 @@ html,body{background:var(--nv)}
 .brand-badge{font-size:9.5px;letter-spacing:2.5px}
 
 /* Sinsa Bank brand anchors */
-.hero-portrait{width:min(260px,72vw);aspect-ratio:4/5;margin:0 auto 18px;border-radius:14px;overflow:hidden;border:1px solid rgba(240,220,154,.34);box-shadow:0 20px 54px rgba(0,0,0,.34);background:#141c26;position:relative}
-.hero-portrait img{width:100%;height:100%;object-fit:cover;object-position:center top;display:block}
-.hero-portrait::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 48%,rgba(8,15,30,.34));pointer-events:none}
 .analyst-strip{display:flex;align-items:center;gap:12px;max-width:820px;margin:14px 0 0;padding:12px 14px;border:1px solid rgba(240,220,154,.2);border-radius:10px;background:rgba(255,255,255,.045)}
 .analyst-strip img{width:46px;height:46px;border-radius:50%;object-fit:cover;object-position:center top;border:2px solid rgba(240,220,154,.75);flex-shrink:0}
 .analyst-strip b{display:block;color:var(--ink);font-size:15px;line-height:1.35}
@@ -566,8 +563,8 @@ html,body{background:var(--nv)}
 .float-actions .urgent img{width:100%;height:100%;object-fit:cover;object-position:center top;display:block}
 .float-actions .urgent::after{content:'';position:absolute;inset:0;border-radius:50%;box-shadow:inset 0 0 0 2px rgba(240,220,154,.82);pointer-events:none}
 .float-actions a{position:relative}
-@media(min-width:769px){.hero-portrait{width:300px;margin-bottom:20px}.analyst-strip{margin-top:16px}}
-@media(max-width:480px){.hero-portrait{width:min(220px,70vw)}.analyst-strip{padding:10px 12px}.analyst-strip img{width:42px;height:42px}}
+@media(min-width:769px){.analyst-strip{margin-top:16px}}
+@media(max-width:480px){.analyst-strip{padding:10px 12px}.analyst-strip img{width:42px;height:42px}}
 
 /* Loading dots */
 .lstep{padding:9px 0;font-size:13px}
@@ -587,9 +584,6 @@ html,body{background:var(--nv)}
 <!-- ═══ LANDING ═══ -->
 <div id="s-land" class="sc on">
   <div class="land-hero">
-    <div class="hero-portrait" aria-label="ซินแสแบงค์">
-      <img src="/assets/sinsa-bank-hero.webp" alt="ซินแสแบงค์ ผู้วิเคราะห์ฮวงจุ้ย" loading="eager" onerror="this.parentElement.style.display='none'">
-    </div>
     <div class="orb-wrap">
       <!-- SVG rings — rotate via animateTransform for guaranteed cross-browser loop -->
       <svg class="orb-svg-rings" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1294,7 +1288,7 @@ async function doAnalyze(){
       var ar=d.result;
       R={score:ar.score,needsExpert:ar.needsExpert,headline:ar.headline,scoreLabel:ar.scoreLabel,
          frontPart:ar.frontPart,interiorPart:ar.interiorPart,typeCheck:ar.typeCheck,observations:ar.observations||[],good:ar.good,bad:(ar.bad||[]).map(function(b){return Object.assign({},b,{masked:false})}),
-         fixFree:(ar.fix||[]).slice(0,2),
+         fixFree:(ar.fix||[]).slice(0,2).map(function(f,i){return {title:freeFixTitle(f.title,i),desc:f.desc||f.hint||''};}),
          fixLocked:(ar.fix||[]).slice(2,8).map(function(f,i){return {title:lockedTitle(f.title,i),hint:f.desc||'ควรวิเคราะห์ร่วมกับพื้นที่จริง'};}),
          omen:ar.omen};
     }catch(e){console.log('API fallback:',e.message);trackEvent('fengshui_analyze_fallback',{reason:String(e.message||'').slice(0,80)});R=buildResult(SEL);R.observations.unshift({title:'รอบนี้ยังอ่านภาพละเอียดไม่สำเร็จ',desc:'รายงานนี้จึงเป็นภาพรวมเบื้องต้นจากข้อมูลที่เลือก หากต้องการผลที่เจาะจากภาพจริง แนะนำให้ลองแนบภาพหน้าบ้านที่ชัดอีกครั้ง โดยให้เห็นประตูหลัก ทางเดิน และพื้นที่หน้าบ้านครบ'});}
@@ -1334,6 +1328,11 @@ function lockedTitle(title,index){
   if(t&&t!=='จุดที่ควรให้ซินแสดูต่อ') return t;
   return ['ตำแหน่งประตูหลัก','สีและวัสดุหน้าบ้าน','พื้นที่หลังประตูหลัก','ระดับพื้นและทางเดิน','ครัวและตำแหน่งเตา','ห้องนอนใหญ่กับผังบ้าน','ยังเหลือจุดที่ปรับเพิ่มได้'][index%7];
 }
+function freeFixTitle(title,index){
+  var t=cleanText(title);
+  if(t&&t!=='วิธีปรับแบบไม่ทุบ'&&t!=='วิธีปรับแบบไม่ทุบ ไม่รื้อ') return t;
+  return ['เปิดทางเข้าหน้าบ้าน','จัดของสองข้างทางเข้า','เพิ่มแสงและความโปร่ง','ปรับจุดรกใกล้ประตู'][index%4];
+}
 function scoreMeaning(score){
   if(score>=95) return 'ส่งเสริมเจ้าของได้เต็มศักยภาพ';
   if(score>=80) return 'พลังงานดี ยังปรับเพิ่มได้';
@@ -1353,8 +1352,8 @@ function normalizeResult(R){
   R.score=score;
   R.scoreLabel=cleanText(R.scoreLabel)||scoreMeaning(score);
   R.headline=cleanText(R.headline)||'บ้านหลังนี้มีจุดเด่นและจุดที่ควรปรับให้พลังงานไหลลื่นขึ้น';
-  R.observations=normalizeItems(R.observations,4);
-  if(R.typeCheck&&(cleanText(R.typeCheck.title)||cleanText(R.typeCheck.desc))){R.observations.unshift(R.typeCheck);R.observations=R.observations.slice(0,4);}
+  R.observations=normalizeItems(R.observations,6);
+  if(R.typeCheck&&(cleanText(R.typeCheck.title)||cleanText(R.typeCheck.desc))){R.observations.unshift(R.typeCheck);R.observations=R.observations.slice(0,6);}
   if(!R.observations.length){R.observations=[{title:'ภาพรวมที่ใช้วิเคราะห์',desc:'ประเมินจากภาพหน้าบ้านร่วมกับประเภทบ้าน ทิศหน้าบ้าน และสภาพแวดล้อมที่เลือก'}];}
   R.good=normalizeItems(R.good,3);
   R.bad=normalizeItems(R.bad,5);
@@ -1365,6 +1364,7 @@ function normalizeResult(R){
   R.fixFree=Array.isArray(R.fixFree)?R.fixFree:(R.fixFree?[R.fixFree]:null);
   if(!R.fixFree||!R.fixFree.length){R.fixFree=normalizeItems(Array.isArray(R.fix)?R.fix.slice(0,2):[],2);}
   if(!R.fixFree.length){R.fixFree=[{title:'เปิดหน้าบ้านให้โปร่งและเห็นประตูหลักชัด',desc:'จัดของหน้าบ้าน ตัดแต่งต้นไม้ และเปิดทางเดินเข้าให้เดินง่าย มองเห็นประตูได้ชัดขึ้น'},{title:'จัดของสองข้างทางเข้าให้เบาลง',desc:'ย้ายของที่ไม่จำเป็นออกจากขอบทางเดินและหน้าประตู เพื่อให้บ้านดูโล่งและใช้งานสะดวกขึ้น'}];}
+  R.fixFree=R.fixFree.slice(0,2).map(function(it,i){return {title:freeFixTitle(it.title,i),desc:it.desc||it.hint||''};});
   R.fixLocked=Array.isArray(R.fixLocked)?R.fixLocked:normalizeItems((R.fix||[]).slice(2),8).map(function(it,i){return {title:lockedTitle(it.title,i),hint:it.desc||'ควรวิเคราะห์ร่วมกับพื้นที่จริง'};});
   var lockFallback=[
     {title:'ตำแหน่งประตูหลักกับทิศบ้าน',hint:'ควรดูหน้างานเพื่อจัดลำดับการปรับให้ตรงจุด'},
