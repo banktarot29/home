@@ -881,7 +881,7 @@ html,body{background:var(--nv)}
     <div class="rv rsec" id="sec-fix">
       <p class="rsec-title"><span class="ri">🔧</span>แนวทางปรับแบบไม่ทุบ ไม่รื้อ</p>
       <div class="fix-zone-free">
-        <p class="fix-zone-label fix-zone-label--free">✓ ทำเองได้เลย — 2 จุดนี้</p>
+        <p class="fix-zone-label fix-zone-label--free">✓ ทำเองได้เลย</p>
         <div id="r-fix-free"></div>
       </div>
       <div class="fix-zone-locked">
@@ -1333,6 +1333,17 @@ async function doAnalyze(){
 
 function escapeHtml(s){return String(s==null?'':s).replace(/[&<>'"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c];});}
 function cleanText(s){return String(s==null?'':s).replace(/\s+/g,' ').trim();}
+function cleanResultTitle(title,fallback){
+  var t=cleanText(title)
+    .replace(/^[0-9๐-๙]+[\).:\-\s]+/g,'')
+    .replace(/\s+[0-9๐-๙]+$/g,'')
+    .trim();
+  if(!t) t=fallback||'';
+  if(t==='สิ่งที่เห็นจากภาพ') return 'สิ่งที่วิเคราะห์จากภาพบ้าน';
+  if(t==='จุดเด่น') return 'จุดเด่นของบ้าน';
+  if(t==='จุดที่ควรระวัง') return 'จุดที่ควรระวัง';
+  return t;
+}
 function smartTextHtml(value){
   var text=String(value==null?'':value).replace(/\s+/g,' ').trim();
   if(!text) return '';
@@ -1350,7 +1361,7 @@ function smartTextHtml(value){
   }
   return '<span class="text-paragraph">'+escapeHtml(text)+'</span>';
 }
-function normalizeItems(items,max){return (Array.isArray(items)?items:[]).map(function(it){return typeof it==='string'?{title:it,desc:''}:it||{};}).filter(function(it){return cleanText(it.title)||cleanText(it.desc);}).slice(0,max||5);}
+function normalizeItems(items,max,fallbackTitle){return (Array.isArray(items)?items:[]).map(function(it){return typeof it==='string'?{title:fallbackTitle||'',desc:it}:it||{};}).map(function(it){return Object.assign({},it,{title:cleanResultTitle(it.title,fallbackTitle||'')});}).filter(function(it){return cleanText(it.title)||cleanText(it.desc);}).slice(0,max||5);}
 function lockedTitle(title,index){
   var t=cleanText(title);
   if(t&&t!=='จุดที่ควรให้ซินแสดูต่อ') return t;
@@ -1380,17 +1391,27 @@ function normalizeResult(R){
   R.score=score;
   R.scoreLabel=cleanText(R.scoreLabel)||scoreMeaning(score);
   R.headline=cleanText(R.headline)||'บ้านหลังนี้มีจุดเด่นและจุดที่ควรปรับให้พลังงานไหลลื่นขึ้น';
-  R.observations=normalizeItems(R.observations,6);
+  R.observations=normalizeItems(R.observations,6,'สิ่งที่วิเคราะห์จากภาพบ้าน');
   if(R.typeCheck&&(cleanText(R.typeCheck.title)||cleanText(R.typeCheck.desc))){R.observations.unshift(R.typeCheck);R.observations=R.observations.slice(0,6);}
   if(!R.observations.length){R.observations=[{title:'ภาพรวมที่ใช้วิเคราะห์',desc:'ประเมินจากภาพหน้าบ้านร่วมกับประเภทบ้าน ทิศหน้าบ้าน และสภาพแวดล้อมที่เลือก'}];}
-  R.good=normalizeItems(R.good,3);
-  R.bad=normalizeItems(R.bad,5);
+  R.good=normalizeItems(R.good,3,'จุดเด่นของบ้าน');
+  R.bad=normalizeItems(R.bad,5,'จุดที่ควรระวัง');
   R.frontPart=R.frontPart||{title:'หน้าบ้านภาพรวม',desc:'ประเมินจากภาพหน้าบ้านร่วมกับทิศและสภาพแวดล้อมที่เลือก'};
   if(!R.good.length){R.good=[{title:'มีข้อมูลตั้งต้นเพียงพอสำหรับประเมินเบื้องต้น',desc:'ประเภทบ้าน ทิศหน้าบ้าน และสภาพแวดล้อมช่วยให้เห็นแนวทางพลังงานของบ้านได้ชัดขึ้น'}];}
   if(!R.bad.length){R.bad=[{title:'ยังควรตรวจภาพหน้าบ้านอย่างละเอียด',desc:'หากภาพไม่เห็นประตู ทางเดิน และสิ่งกีดขวางครบ การประเมินบางจุดอาจต้องดูพื้นที่จริงเพิ่มเติม'}];}
   R.fixFree=Array.isArray(R.fixFree)?R.fixFree:(R.fixFree?[R.fixFree]:null);
   if(!R.fixFree||!R.fixFree.length){R.fixFree=normalizeItems(Array.isArray(R.fix)?R.fix.slice(0,2):[],2);}
   if(!R.fixFree.length){R.fixFree=[{title:'เปิดหน้าบ้านให้โปร่งและเห็นประตูหลักชัด',desc:'จัดของหน้าบ้าน ตัดแต่งต้นไม้ และเปิดทางเดินเข้าให้เดินง่าย มองเห็นประตูได้ชัดขึ้น'},{title:'จัดของสองข้างทางเข้าให้เบาลง',desc:'ย้ายของที่ไม่จำเป็นออกจากขอบทางเดินและหน้าประตู เพื่อให้บ้านดูโล่งและใช้งานสะดวกขึ้น'}];}
+  if(R.fixFree.length===1){
+    var only=R.fixFree[0]||{}, bullets=cleanText(only.desc||'').split(/\s*[•]\s+/).map(function(x){return cleanText(x);}).filter(Boolean);
+    if(bullets.length>=4){
+      var mid=Math.ceil(bullets.length/2);
+      R.fixFree=[
+        {title:freeFixTitle(only.title,0),desc:'• '+bullets.slice(0,mid).join(' • ')},
+        {title:'จัดของและแสงหน้าบ้านให้เบาลง',desc:'• '+bullets.slice(mid).join(' • ')}
+      ];
+    }
+  }
   R.fixFree=R.fixFree.slice(0,2).map(function(it,i){return {title:freeFixTitle(it.title,i),desc:it.desc||it.hint||''};});
   R.fixLocked=Array.isArray(R.fixLocked)?R.fixLocked:normalizeItems((R.fix||[]).slice(2),8).map(function(it,i){return {title:lockedTitle(it.title,i),hint:it.desc||'ควรวิเคราะห์ร่วมกับพื้นที่จริง'};});
   var lockFallback=[
@@ -1429,7 +1450,7 @@ function mkCardsFull(items,cid,cls){var c=document.getElementById(cid);c.innerHT
 
   // Fix: 1 card free + locked list
   var fc=document.getElementById('r-fix-free');
-  fc.innerHTML='';var freeItems=(R.fixFree||[]).slice(0,2);freeItems.forEach(function(f,i){var d=document.createElement('div');d.className='fix-teaser';d.innerHTML='<div class="fix-free-hdr"><span class="fix-step-num">'+(i+1)+'</span><strong>'+escapeHtml(f.title||'')+'</strong></div><p>'+smartTextHtml(f.desc||'')+'</p>';fc.appendChild(d);});
+  fc.innerHTML='';var freeItems=(R.fixFree||[]).slice(0,2);freeItems.forEach(function(f){var d=document.createElement('div');d.className='fix-teaser';d.innerHTML='<div class="fix-free-hdr"><strong>'+escapeHtml(f.title||'')+'</strong></div><p>'+smartTextHtml(f.desc||'')+'</p>';fc.appendChild(d);});
   var fl=document.getElementById('r-fix-locked');fl.innerHTML='';
   (R.fixLocked||[]).forEach(function(item){
     var d=document.createElement('div');d.className='fix-locked';
@@ -1460,7 +1481,8 @@ function mkCardsFull(items,cid,cls){var c=document.getElementById(cid);c.innerHT
     if(ma) ma.innerHTML='💬 &nbsp;สั่ง Ebook ผ่าน LINE ↗';
   }
   var promo=document.querySelector('#sec-promo .promo-box');
-  if(promo){promo.innerHTML=serviceFirst?'<div class="promo-tag">✦ ขั้นตอนถัดไป</div><p class="promo-title">ภาพยังมีจุดที่ควรดูเพิ่ม</p><p class="promo-desc">ผลที่เห็นด้านบนบอกจุดเสี่ยงหลักแล้ว แต่บ้านคะแนนต่ำกว่า 75 ควรส่งรูปเพิ่มให้ซินแสดูต่อก่อน เพื่อแยกว่าต้องเริ่มจากประตูหลัก พื้นที่หลังประตู สีวัสดุ หรือผังภายใน</p><div class="promo-price"><span class="promo-amount">ส่งรูปเพิ่ม</span><span class="promo-unit">ให้ซินแสดูต่อผ่าน LINE</span></div><p class="promo-note">คุณจะได้แนวทางต่อก่อน ไม่ต้องรู้สึกว่าถูกขายทันที</p>':'<div class="promo-tag">✦ ขั้นตอนถัดไป</div><p class="promo-title">ต่อยอดเองด้วย Ebook จัดฮวงจุ้ย</p><p class="promo-desc">คุณได้ภาพรวมของบ้านแล้ว หากอยากค่อยๆ ปรับเอง หนังสือจะช่วยให้เข้าใจหลักการจัดพื้นที่ สี ทิศ และจุดที่ควรสังเกตในบ้าน</p><div class="promo-price"><span class="promo-amount">สั่ง Ebook ผ่าน LINE</span><span class="promo-unit">เริ่มจากการเรียนรู้และปรับเอง</span></div><p class="promo-note">เหมาะกับบ้านที่คะแนนตั้งแต่ 75% ขึ้นไป หรือบ้านที่ต้องการต่อยอดจากพื้นฐานเดิม</p>';}
+  if(promo){promo.innerHTML=serviceFirst?'':'<div class="promo-tag">✦ ขั้นตอนถัดไป</div><p class="promo-title">ต่อยอดเองด้วย Ebook จัดฮวงจุ้ย</p><p class="promo-desc">คุณได้ภาพรวมของบ้านแล้ว หากอยากค่อยๆ ปรับเอง หนังสือจะช่วยให้เข้าใจหลักการจัดพื้นที่ สี ทิศ และจุดที่ควรสังเกตในบ้าน</p><div class="promo-price"><span class="promo-amount">สั่ง Ebook ผ่าน LINE</span><span class="promo-unit">เริ่มจากการเรียนรู้และปรับเอง</span></div><p class="promo-note">เหมาะกับบ้านที่คะแนนตั้งแต่ 75% ขึ้นไป หรือบ้านที่ต้องการต่อยอดจากพื้นฐานเดิม</p>';}
+  document.getElementById('sec-promo').style.display=serviceFirst?'none':'block';
   document.getElementById('sec-cta-high').style.display='none';
   document.getElementById('sec-cta-mid').style.display='none';
   document.getElementById(serviceFirst?'sec-cta-high':'sec-cta-mid').style.display='block';
