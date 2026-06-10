@@ -131,6 +131,40 @@ const analysisTool = {
   }
 };
 
+const evidenceSystemPrompt = `คุณคือผู้ช่วยตรวจภาพบ้านก่อนวิเคราะห์ฮวงจุ้ย
+
+งานของคุณคืออ่าน "หลักฐานจากภาพ" เท่านั้น ยังไม่ต้องเขียนคำวิเคราะห์สวยงาม ยังไม่ต้องขาย และห้ามอวยบ้าน
+
+ให้ดูภาพที่ 1 เป็นหน้าบ้าน และถ้ามีภาพที่ 2 ให้ดูเป็นภาพภายในบ้านหรือพื้นที่ใช้งานจริง แล้วสรุปเฉพาะสิ่งที่เห็น/ไม่เห็นอย่างตรงไปตรงมา
+
+กติกาสำคัญ:
+- ถ้าเห็นชัด ให้ระบุว่าสิ่งนั้นอยู่ตรงไหนและส่งผลกับการใช้งานอย่างไร
+- ถ้าไม่เห็น ให้บอกว่าไม่เห็น ไม่เดา
+- ภาพภายในต้องถูกนำมาเทียบกับภาพหน้าบ้านเสมอ เช่น ยืนยันว่าทางเข้าต่อเข้าพื้นที่ใด หรือยังไม่เห็นโถงแรกหลังประตู
+- ห้ามใช้คำกว้าง เช่น พลังงานเสีย, โชคลาภเข้าไม่ได้, บ้านไม่สมดุล
+- ส่งคำตอบผ่านเครื่องมือ submit_visual_evidence เท่านั้น`;
+
+const evidenceTool = {
+  name: 'submit_visual_evidence',
+  description: 'Extract practical visual evidence from the exterior and interior home photos before fengshui synthesis.',
+  input_schema: {
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+      frontSeen: { type: 'string' },
+      frontRisks: { type: 'string' },
+      frontStrengths: { type: 'string' },
+      interiorSeen: { type: 'string' },
+      interiorRisks: { type: 'string' },
+      linkBetweenPhotos: { type: 'string' },
+      missingAngles: { type: 'string' },
+      confidence: { type: 'string', enum: ['สูง', 'ปานกลาง', 'ต่ำ'] },
+      conversionReason: { type: 'string' }
+    },
+    required: ['frontSeen','frontRisks','frontStrengths','interiorSeen','interiorRisks','linkBetweenPhotos','missingAngles','confidence','conversionReason']
+  }
+};
+
 export default async function handler(req, res) {
   // CORS headers — allow any origin (เพื่อให้ claude.ai artifact และ domain จริงเรียกได้)
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -245,9 +279,71 @@ export default async function handler(req, res) {
 ถ้ามีภาพภายใน ให้ภาพภายในต้องทำให้ผลดีขึ้นอย่างน้อย 2 จุด: 1) ระบุว่าพลังงานจากหน้าบ้านเข้าไปแล้วติดหรือไหลตรงไหน 2) บอกมุม/พื้นที่ภายในที่ควรถ่ายเพิ่มหรือปรับก่อน
 ห้ามเขียนว่า "ภาพภายในช่วยดู..." แบบกว้างๆ ต้องบอกว่าเห็นอะไรหรือยังไม่เห็นอะไร`;
 
+  let timeout;
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 54000);
+    timeout = setTimeout(() => controller.abort(), 56000);
+
+    const evidenceResponse = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+      },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1400,
+        system: evidenceSystemPrompt,
+        tools: [evidenceTool],
+        tool_choice: { type: 'tool', name: 'submit_visual_evidence' },
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'text', text: 'ภาพที่ 1: หน้าบ้าน ให้แยกหลักฐานที่เห็นจริงเกี่ยวกับประตู ทางเข้าหลัก พื้น/ชาน/ระดับพื้น รั้ว กำแพง ต้นไม้ ของวาง รถ ตู้ไฟ สายไฟ แสง ความทึบ ความโปร่ง และสิ่งที่บังทางเข้า' },
+            { type: 'image', source: { type: 'base64', media_type: photoMime || 'image/jpeg', data: photoB64 } },
+            ...(interiorB64 ? [
+              { type: 'text', text: 'ภาพที่ 2: ภายในบ้านหรือพื้นที่ใช้งานจริง ให้ดูว่าเห็นโถงแรกหลังประตูหรือไม่ พลังงานจากหน้าบ้านน่าจะไหลไปเจออะไร มีทางเดิน ผนัง เฟอร์นิเจอร์ ของกีดขวาง แสง จุดอับ หรือพื้นที่โล่งตรงไหนบ้าง แล้วเทียบกับภาพหน้าบ้าน' },
+              { type: 'image', source: { type: 'base64', media_type: interiorMime || 'image/jpeg', data: interiorB64 } }
+            ] : []),
+            { type: 'text', text: 'สรุปเป็นหลักฐานสั้น กระชับ ตรง ไม่แต่งเรื่อง ถ้าภาพไม่พอให้บอกว่าควรถ่ายมุมไหนเพิ่ม และระบุเหตุผลที่เหมาะกับการชวนส่งรูปเพิ่ม/คุยต่อโดยไม่ขายแข็ง' }
+          ]
+        }]
+      })
+    });
+
+    if (!evidenceResponse.ok) {
+      const err = await evidenceResponse.text();
+      console.error('Anthropic evidence error:', err);
+      return res.status(502).json({ error: 'Upstream API error', detail: err });
+    }
+
+    const evidenceData = await evidenceResponse.json();
+    const evidenceToolUse = (evidenceData.content || []).find(i => i.type === 'tool_use' && i.name === 'submit_visual_evidence');
+    const visualEvidence = evidenceToolUse?.input || {
+      frontSeen: 'อ่านภาพหน้าบ้านได้บางส่วน แต่ระบบยังแยกหลักฐานจากภาพได้ไม่ครบ',
+      frontRisks: 'ควรตรวจประตู ทางเข้า พื้นหน้าบ้าน ของวาง และความทึบโปร่งจากภาพอีกครั้ง',
+      frontStrengths: 'ยังมีพื้นที่หน้าบ้านให้จัดเส้นทางและเปิดประตูให้ชัดขึ้นได้',
+      interiorSeen: interiorB64 ? 'มีภาพภายใน แต่ยังต้องระบุว่าหลังเปิดประตูเจออะไรให้ชัด' : 'ยังไม่มีภาพภายในบ้าน',
+      interiorRisks: interiorB64 ? 'ควรตรวจโถงแรก ทางเดิน แสง และของกีดขวางภายใน' : 'ยังยืนยันการไหลจากหน้าบ้านเข้าสู่พื้นที่จริงไม่ได้',
+      linkBetweenPhotos: interiorB64 ? 'ต้องใช้ภาพหน้าบ้านและภาพภายในเทียบกันก่อนสรุปจุดแก้' : 'ยังไม่มีภาพภายในสำหรับเทียบกับหน้าบ้าน',
+      missingAngles: 'ควรถ่ายหน้าประตูตรง ๆ จากระยะ 2-3 เมตร และถ่ายจากหลังประตูหลักหันเข้าบ้าน',
+      confidence: 'ปานกลาง',
+      conversionReason: 'ควรส่งรูปเพิ่มเพื่อแยกว่าต้องแก้ที่ประตู ทางเข้า หรือพื้นที่หลังประตูก่อน'
+    };
+
+    const evidenceText = `หลักฐานจากภาพที่ต้องใช้เป็นฐานในการวิเคราะห์:
+- สิ่งที่เห็นจากหน้าบ้าน: ${visualEvidence.frontSeen}
+- จุดเสี่ยงจากหน้าบ้าน: ${visualEvidence.frontRisks}
+- จุดแข็งจากหน้าบ้าน: ${visualEvidence.frontStrengths}
+- สิ่งที่เห็นจากภาพภายใน: ${visualEvidence.interiorSeen}
+- จุดเสี่ยงจากภาพภายใน: ${visualEvidence.interiorRisks}
+- ความเชื่อมโยงระหว่างภาพหน้าบ้านกับภาพภายใน: ${visualEvidence.linkBetweenPhotos}
+- มุมที่ยังขาดและควรถ่ายเพิ่ม: ${visualEvidence.missingAngles}
+- ระดับความมั่นใจจากภาพ: ${visualEvidence.confidence}
+- เหตุผลเชิงปฏิบัติที่ควรชวนส่งรูป/คุยต่อ: ${visualEvidence.conversionReason}`;
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -259,27 +355,28 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 3600,
-        system: compactSystemPrompt,
+        system: compactSystemPrompt + '\n\nกติกาเพิ่มเติมสำหรับรอบเขียนผล: เขียนแบบมือโปร ตรง ใช้งานได้จริง ไม่อวยเกินจริง ไม่ขายแข็ง ทุกข้อสำคัญต้องอ้างหลักฐานจากภาพหรือข้อจำกัดจากหลักฐานด้านล่างก่อนเสมอ ถ้าภาพยังไม่พอให้ชวนส่งรูปเพิ่มด้วยเหตุผลเฉพาะจุด ไม่ใช้ประโยคขายทั่วไป',
         tools: [analysisTool],
         tool_choice: { type: 'tool', name: 'submit_fengshui_analysis' },
         messages: [{
           role: 'user',
-          content: [
-            { type: 'text', text: 'ภาพที่ 1: ภาพหน้าบ้าน ให้ตรวจแบบละเอียดเป็นลำดับ: 1) ประตูหลักและทางเข้ามองชัดไหม 2) เส้นทางเดินถูกบีบหรือโล่ง 3) พื้น/ชาน/ระดับพื้นส่งผลต่อการรับพลังงานไหม 4) ของวาง ต้นไม้ ตู้ไฟ สายไฟ หรือรถบังทางเข้าไหม 5) ภาพรวมทึบ โปร่ง สะอาด หรือรกแค่ไหน ต้องอ้างสิ่งที่เห็นจริง ห้ามตอบแบบกว้าง' },
-            { type: 'image', source: { type: 'base64', media_type: photoMime || 'image/jpeg', data: photoB64 } },
-            ...(interiorB64 ? [
-              { type: 'text', text: 'ภาพที่ 2: ภาพภายในบ้าน ให้ตรวจว่าหลังเปิดประตูเข้าบ้านแล้วพลังงานเจออะไร: โถงแรก ทางเดิน ผนังตรงประตู เฟอร์นิเจอร์ แสง ของกีดขวาง จุดอับ และความโล่ง ถ้าภาพไม่เห็นโถงแรกหรือทางเดิน ให้พูดตรงๆ พร้อมบอกมุมที่ต้องถ่ายเพิ่ม' },
-              { type: 'image', source: { type: 'base64', media_type: interiorMime || 'image/jpeg', data: interiorB64 } }
-            ] : []),
-            { type: 'text', text: userText }
-          ]
+          content: [{
+            type: 'text',
+            text: `${userText}
+
+${evidenceText}
+
+ให้เขียนผลวิเคราะห์จากหลักฐานนี้เป็นหลัก ถ้าภาพที่ 2 ให้ข้อมูลไม่พอ ห้ามเขียนเหมือนเห็นครบ ให้บอกว่าภาพภายในยังไม่ยืนยันจุดใด และระบุมุมที่ต้องถ่ายเพิ่มแบบสั้นชัด
+
+เป้าหมายธุรกิจ: ถ้าคะแนนต่ำกว่า 75 หรือหลักฐานยังไม่พอ ให้ทำให้ CTA "ส่งรูปเพิ่มให้ซินแสดูต่อ" ดูสมเหตุสมผล เพราะเจ้าของบ้านจะได้คำตอบเฉพาะบ้านมากขึ้น ไม่ใช่ถูกขายทันที`
+          }]
         }]
       })
     });
 
     if (!response.ok) {
       const err = await response.text();
-      console.error('Anthropic error:', err);
+      console.error('Anthropic analysis error:', err);
       return res.status(502).json({ error: 'Upstream API error', detail: err });
     }
 
@@ -298,13 +395,13 @@ export default async function handler(req, res) {
     }
 
     const result = normalizeAiResult(parsed, !!interiorB64);
-    return res.status(200).json({ ok: true, result, via });
+    return res.status(200).json({ ok: true, result, via, evidence: visualEvidence });
 
   } catch (err) {
     console.error('Handler error:', err);
     if (err.name === 'AbortError') return res.status(504).json({ error: 'AI analysis timeout' });
     return res.status(500).json({ error: err.message });
   } finally {
-    clearTimeout(timeout);
+    if (timeout) clearTimeout(timeout);
   }
 }
