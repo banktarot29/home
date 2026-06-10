@@ -774,7 +774,7 @@ html,body{background:var(--nv)}
       </div>
       <input type="file" id="photo-in" accept="image/*">
       <div class="upload-example">
-        <img src="/assets/front-house-good-example.webp" alt="ตัวอย่างภาพหน้าบ้านที่เหมาะสำหรับวิเคราะห์" loading="lazy">
+        <img src="/assets/sample.webp" alt="ตัวอย่างภาพหน้าบ้านที่เหมาะสำหรับวิเคราะห์" loading="lazy">
         <b>ตัวอย่างภาพที่เหมาะ</b>
         <p>เห็นหน้าบ้านเต็มภาพ มีรั้ว ประตู ทางเดิน พื้นหน้าบ้าน ต้นไม้ และบริบทด้านหน้า ไม่ซูมใกล้เกินไป</p>
       </div>
@@ -1199,7 +1199,7 @@ function buildResult(sel){
     score:score,needsExpert:needsExpert,
     observations:[
       {title:'ภาพรวมจากข้อมูลที่เลือก',desc:'บ้านประเภท '+sel.type+' ใช้งานแบบ '+(sel.usage||'ไม่ได้ระบุ')+' หันออก '+sel.dir+' อยู่ในสภาพแวดล้อม '+sel.env+' และปัญหาที่แจ้งคือ '+((sel.pain||[]).join(', ')||'ไม่มีปัญหาชัดเจน')+' จึงควรเริ่มจากการจัดหน้าบ้านให้ทางเข้าอ่านง่ายและใช้งานสะดวกก่อน'},
-      {title:'ตรวจรูปแบบที่อยู่อาศัย',desc:'รอบนี้ยังอ่านภาพแบบละเอียดไม่สำเร็จ จึงยืนยันจากภาพไม่ได้ว่ารูปแบบที่เลือกตรงกับบ้านจริงหรือไม่ ควรลองใหม่ด้วยภาพหน้าบ้านที่ชัดขึ้น'},
+      {title:'ตรวจรูปแบบที่อยู่อาศัย',desc:'รูปแบบบ้านที่เลือกใช้เป็นข้อมูลประกอบ ควรดูร่วมกับภาพหน้าบ้านจริง โดยเฉพาะตำแหน่งประตูหลัก ทางเดิน รั้ว และพื้นที่เปิดรับด้านหน้า'},
       {title:'จุดที่ควรดูจากหน้าบ้าน',desc:'ให้ดูว่าทางเดินเข้าบ้านเปิดโล่งไหม ประตูหลักมองเห็นชัดหรือเปล่า และมีของวางบีบทางเข้าจนทำให้หน้าบ้านดูอึดอัดหรือไม่'},
       {title:'ข้อจำกัดของการวิเคราะห์',desc:'หากภาพเห็นหน้าบ้านไม่ครบ รายงานนี้จะเป็นการประเมินเบื้องต้นและควรส่งภาพหน้าบ้านที่ชัดขึ้นเพื่อตรวจต่อ'}],
     frontPart:{title:'หน้าบ้านภาพรวม',desc:'หน้าบ้านคือจุดแรกที่บ้านรับคน รับลม และรับสายตาเข้ามา หากทางเข้าอ่านไม่ชัดหรือมีของบังมากเกินไป บ้านจะดูอึดอัดตั้งแต่ก่อนเข้าประตู จุดแรกที่ควรทำคือเปิดทางเดินและทำให้ประตูหลักเด่นขึ้น'},
@@ -1269,7 +1269,7 @@ async function doAnalyze(){
     var steps=[['ls2','กำลังอ่านภาพบ้าน...'],['ls3','วิเคราะห์จุดพลังงานและผลกระทบ ✓'],['ls4','จัดทำรายงานฮวงจุ้ยเฉพาะบ้านคุณ ✓']];
     await delay(600);document.getElementById('ls2').querySelector('.lstep-ico').textContent='⟳';document.getElementById('lst').textContent=steps[0][1];
 
-    // Try backend, fallback to prototype
+    // Try backend. Do not show a fake analysis if the vision request fails.
     var R=null;
     try{
       window._houseType=SEL.type||'';window._facing=SEL.dir||'';
@@ -1294,7 +1294,11 @@ async function doAnalyze(){
          fixFree:(ar.fix||[]).slice(0,2).map(function(f,i){return {title:freeFixTitle(f.title,i),desc:f.desc||f.hint||''};}),
          fixLocked:(ar.fix||[]).slice(2,8).map(function(f,i){return {title:lockedTitle(f.title,i),hint:f.desc||'ควรวิเคราะห์ร่วมกับพื้นที่จริง'};}),
          omen:ar.omen};
-    }catch(e){console.log('API fallback:',e.message);trackEvent('fengshui_analyze_fallback',{reason:String(e.message||'').slice(0,80)});R=buildResult(SEL);R.observations.unshift({title:'รอบนี้ยังอ่านภาพละเอียดไม่สำเร็จ',desc:'รายงานนี้จึงเป็นภาพรวมเบื้องต้นจากข้อมูลที่เลือก หากต้องการผลที่เจาะจากภาพจริง แนะนำให้ลองแนบภาพหน้าบ้านที่ชัดอีกครั้ง โดยให้เห็นประตูหลัก ทางเดิน และพื้นที่หน้าบ้านครบ'});}
+    }catch(e){
+      console.log('Analyze API failed:',e.message);
+      trackEvent('fengshui_analyze_failed',{reason:String(e.message||'').slice(0,80)});
+      throw e;
+    }
 
     await delay(500);stepDone('ls2','อ่านภาพบ้านแล้ว ✓');
     await delay(500);stepDone('ls3',steps[1][1]);
@@ -1311,9 +1315,9 @@ async function doAnalyze(){
     } else if(msg.includes('413')||msg.includes('ใหญ่เกินไป')){
       alert('ภาพที่แนบขนาดใหญ่เกินไป กรุณาลดขนาดภาพแล้วลองใหม่');
     } else if(msg.includes('timeout')||msg.includes('504')){
-      alert('การวิเคราะห์ใช้เวลานานเกินไป กรุณาลองใหม่อีกครั้ง');
+      alert('ระบบอ่านภาพใช้เวลานานเกินไป กรุณาลองใหม่อีกครั้ง ภาพของคุณไม่ได้ผิด แต่ระบบประมวลผลไม่สำเร็จ');
     } else {
-      alert('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+      alert('ระบบอ่านภาพไม่สำเร็จ กรุณาลองใหม่อีกครั้ง หรือทัก LINE เพื่อให้ทีมงานช่วยดูต่อ');
     }
     show('survey');
   } finally {
