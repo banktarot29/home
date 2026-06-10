@@ -154,6 +154,18 @@ body{font-family:'Sarabun','Noto Serif Thai',sans-serif;color:#fff;font-size:15p
 
 /* ════ SURVEY ════ */
 .sbody{padding:22px 18px 44px;max-width:540px;margin:0 auto;width:100%}
+.form-step{display:none;animation:fadeUp .35s ease both}
+.form-step.active{display:block}
+.step-kicker{font-size:11px;color:rgba(201,168,76,.62);letter-spacing:1.4px;text-transform:uppercase;margin-bottom:8px}
+.step-title{font-size:18px;color:#fff;font-weight:600;line-height:1.45;margin-bottom:5px}
+.step-sub{font-size:12.5px;color:rgba(255,255,255,.48);line-height:1.75;margin-bottom:16px}
+.form-nav{display:flex;gap:9px;margin-top:18px}
+.form-nav button{min-height:46px;border-radius:10px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;cursor:pointer}
+.btn-next{flex:1;border:0;background:linear-gradient(135deg,#5c3f0c,#C9A84C,#F0DC9A);color:#08101f}
+.btn-prev{width:104px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:rgba(255,255,255,.7)}
+.step-mini{display:flex;gap:5px;margin-bottom:16px}
+.step-dot{flex:1;height:3px;border-radius:999px;background:rgba(255,255,255,.08)}
+.step-dot.on{background:linear-gradient(90deg,var(--gd),var(--g),var(--gl))}
 .sec-hdr{display:flex;align-items:center;gap:10px;margin-bottom:14px;margin-top:26px}
 .sec-hdr:first-child{margin-top:0}
 .sec-num{width:27px;height:27px;border-radius:50%;background:rgba(201,168,76,.1);border:.5px solid rgba(201,168,76,.4);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:11px;color:var(--g);flex-shrink:0}
@@ -211,6 +223,8 @@ body{font-family:'Sarabun','Noto Serif Thai',sans-serif;color:#fff;font-size:15p
 .followup-row button:disabled{opacity:.55;cursor:not-allowed}
 .followup-note{font-size:11px;color:rgba(255,255,255,.42);line-height:1.6;margin-top:9px}
 .followup-status{font-size:12px;color:var(--good);line-height:1.6;min-height:18px;margin-top:7px}
+.followup-box.done{border-color:rgba(76,175,130,.45);background:linear-gradient(180deg,rgba(76,175,130,.13),rgba(255,255,255,.035))}
+.followup-thanks{padding:13px 14px;border-radius:10px;background:rgba(76,175,130,.12);border:1px solid rgba(76,175,130,.28);color:rgba(220,255,235,.95);font-size:13px;line-height:1.75;margin-top:10px}
 .liff-pill{display:none;align-items:center;gap:6px;width:max-content;max-width:100%;margin-top:8px;padding:5px 9px;border-radius:999px;background:rgba(76,175,130,.12);border:1px solid rgba(76,175,130,.25);color:rgba(126,224,170,.95);font-size:11px}
 body.liff-ready .liff-pill{display:inline-flex}
 @media(max-width:520px){.followup-row{flex-direction:column}.followup-row button{min-height:44px}}
@@ -268,6 +282,12 @@ body.result-mode .float-actions{display:flex}
 .score-ring-lg svg{width:110px;height:110px;transform:rotate(-90deg)}
 .score-num-lg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:34px;font-weight:700;color:var(--g);filter:drop-shadow(0 0 12px rgba(201,168,76,.4))}
 .score-hero-info{flex:1}
+.score-status{display:inline-flex;align-items:center;gap:8px;margin-bottom:8px;padding:6px 10px;border-radius:999px;border:1px solid rgba(201,168,76,.25);background:rgba(255,255,255,.04);font-size:12px;color:rgba(255,255,255,.75)}
+.score-status-ico{font-size:18px;line-height:1}
+.score-status.excellent{border-color:rgba(76,175,130,.45);background:rgba(76,175,130,.1)}
+.score-status.good{border-color:rgba(201,168,76,.45);background:rgba(201,168,76,.1)}
+.score-status.warn{border-color:rgba(240,166,74,.45);background:rgba(240,166,74,.1)}
+.score-status.danger{border-color:rgba(224,85,85,.5);background:rgba(224,85,85,.1)}
 /* legacy ring (keep for JS compat) */
 .score-ring{position:relative;width:70px;height:70px;flex-shrink:0;display:none}
 .score-ring svg{width:70px;height:70px;transform:rotate(-90deg)}
@@ -592,7 +612,7 @@ body.result-mode .float-actions{display:flex}
       </div>
     </div>
 
-    <button class="btn-start" onclick="show('survey')">เริ่มตรวจฮวงจุ้ยบ้านฟรี &nbsp;✦</button>
+    <button class="btn-start" onclick="startSurvey()">เริ่มตรวจฮวงจุ้ยบ้านฟรี &nbsp;✦</button>
     <p class="free-note">✦ ไม่มีค่าใช้จ่าย · ไม่ต้องสมัครสมาชิก ✦</p>
     <div class="trust-strip">
       <div class="trust-item"><span class="trust-ico">🛡️</span><span>ไม่เก็บภาพไว้ในเครื่องผู้ใช้</span></div>
@@ -612,43 +632,81 @@ body.result-mode .float-actions{display:flex}
     <div class="prog-wrap"><div class="prog-fill" id="prog" style="width:0%"></div></div>
   </div>
   <div class="sbody">
-    <div class="sec-hdr"><div class="sec-num">1</div><span class="sec-title">ข้อมูลพื้นฐาน</span></div>
-    <div class="q-grp"><p class="q-title">รูปแบบที่อยู่อาศัย</p><div class="opts" id="q-type"></div></div>
-    <div class="q-grp"><p class="q-title">ทิศที่หน้าบ้านหันออก</p><div class="opts" id="q-dir"></div></div>
-    <div class="q-grp"><p class="q-title">สภาพแวดล้อมรอบบ้าน</p><div class="opts" id="q-env"></div></div>
-    <div class="q-grp"><p class="q-title">บ้านหลังนี้กำลังมีปัญหาอะไร</p><div class="opts" id="q-pain"></div></div>
-    <div class="q-grp"><p class="q-title">บ้านนี้ใช้งานแบบไหน</p><div class="opts" id="q-usage"></div></div>
-    <div class="q-grp"><p class="q-title">บ้านนี้อยู่มากี่ปีแล้ว</p><div class="opts" id="q-years"></div></div>
-    <div class="divg"><span class="divg-icon">◈</span></div>
-    <div class="sec-hdr"><div class="sec-num">2</div><span class="sec-title">ภาพที่ดีที่สุดสำหรับการวิเคราะห์</span></div>
-    <div class="upload-zone" id="uz" onclick="document.getElementById('photo-in').click()">
-      <span class="upload-ico">📷</span>
-      <p><strong>อัพโหลดภาพหน้าบ้านของคุณ</strong></p>
-      <p>ถ่ายจากหน้าบ้านตรงๆ ให้เห็นรั้ว ประตู ทางเดิน และตัวบ้าน ถ่ายกลางวันจะดีที่สุด อย่าซูมเฉพาะประตู และอย่าให้มีรถบังหน้าบ้าน</p>
+    <div class="step-mini" id="step-mini"></div>
+    <div class="form-step active" data-step="1">
+      <p class="step-kicker">Step 1 / 6</p>
+      <p class="step-title">บ้านหลังนี้เป็นแบบไหน</p>
+      <p class="step-sub">เริ่มจากรูปแบบบ้านก่อน เพื่อให้ระบบเลือกกรอบวิเคราะห์ที่ตรงกับพื้นที่จริง</p>
+      <div class="sec-hdr"><div class="sec-num">1</div><span class="sec-title">ข้อมูลพื้นฐาน</span></div>
+      <div class="q-grp"><p class="q-title">รูปแบบที่อยู่อาศัย</p><div class="opts" id="q-type"></div></div>
+      <div class="form-nav"><button class="btn-next" type="button" onclick="goStep(2)">ถัดไป</button></div>
     </div>
-    <img id="photo-prev" alt="ภาพหน้าบ้าน">
-    <div class="upload-success" id="upload-ok-front">
-      <span class="us-ico">✓</span><span id="upload-ok-front-name">แนบภาพสำเร็จ</span>
-      <span class="upload-change" onclick="document.getElementById('photo-in').click()">เปลี่ยน</span>
+    <div class="form-step" data-step="2">
+      <p class="step-kicker">Step 2 / 6</p>
+      <p class="step-title">ทิศและสภาพแวดล้อม</p>
+      <p class="step-sub">ทิศหน้าบ้านกับสิ่งรอบบ้านมีผลกับทางเข้า แสง ลม และพลังงานที่บ้านรับเข้ามา</p>
+      <div class="sec-hdr"><div class="sec-num">2</div><span class="sec-title">ทิศและบริบทหน้าบ้าน</span></div>
+      <div class="q-grp"><p class="q-title">ทิศที่หน้าบ้านหันออก</p><div class="opts" id="q-dir"></div></div>
+      <div class="q-grp"><p class="q-title">สภาพแวดล้อมรอบบ้าน</p><div class="opts" id="q-env"></div></div>
+      <div class="form-nav"><button class="btn-prev" type="button" onclick="goStep(1)">ย้อนกลับ</button><button class="btn-next" type="button" onclick="goStep(3)">ถัดไป</button></div>
     </div>
-    <input type="file" id="photo-in" accept="image/*">
-    <div class="guide-box"><p>📸 &nbsp;ภาพที่ดีควรเห็นหน้าบ้านเต็มเฟรม ทางเข้าจากรั้วถึงประตูหลัก พื้นหน้าบ้าน รั้ว ของวาง ต้นไม้ และสภาพแวดล้อมด้านหน้า</p></div>
-    <div class="sec-hdr" style="margin-top:16px"><div class="sec-num">3</div><span class="sec-title">เพิ่มความแม่นยำอีก 30-40%</span></div>
-    <div class="upload-zone secondary" id="uz2" onclick="document.getElementById('photo-in2').click()">
-      <span class="upload-ico">🛋️</span>
-      <p><strong>แนบภาพโถงแรกหรือพื้นที่ที่รู้สึกว่ามีปัญหา</strong></p>
-      <p>ควรเห็นโถงแรกหลังเปิดประตู ห้องนั่งเล่น ทางเดินหลัก หรือบริเวณที่รู้สึกว่าติดขัด</p>
+    <div class="form-step" data-step="3">
+      <p class="step-kicker">Step 3 / 6</p>
+      <p class="step-title">บ้านกำลังติดเรื่องอะไร</p>
+      <p class="step-sub">เลือกได้มากกว่าหนึ่งข้อ เพื่อให้ผลวิเคราะห์โยงกับชีวิตจริง ไม่ใช่แค่อ่านภาพอย่างเดียว</p>
+      <div class="sec-hdr"><div class="sec-num">3</div><span class="sec-title">อาการของบ้าน</span></div>
+      <div class="q-grp"><p class="q-title">บ้านหลังนี้กำลังมีปัญหาอะไร</p><div class="opts" id="q-pain"></div></div>
+      <div class="form-nav"><button class="btn-prev" type="button" onclick="goStep(2)">ย้อนกลับ</button><button class="btn-next" type="button" onclick="goStep(4)">ถัดไป</button></div>
     </div>
-    <img id="photo-prev2" alt="ภาพภายในบ้าน">
-    <div class="upload-success" id="upload-ok-interior">
-      <span class="us-ico">✓</span><span id="upload-ok-interior-name">แนบภาพสำเร็จ</span>
-      <span class="upload-change" onclick="document.getElementById('photo-in2').click()">เปลี่ยน</span>
+    <div class="form-step" data-step="4">
+      <p class="step-kicker">Step 4 / 6</p>
+      <p class="step-title">ใช้บ้านนี้อย่างไร</p>
+      <p class="step-sub">บ้านที่อยู่เอง ทำงาน ค้าขาย หรือปล่อยเช่า มีจุดที่ต้องดูไม่เหมือนกัน</p>
+      <div class="sec-hdr"><div class="sec-num">4</div><span class="sec-title">การใช้งานและระยะเวลา</span></div>
+      <div class="q-grp"><p class="q-title">บ้านนี้ใช้งานแบบไหน</p><div class="opts" id="q-usage"></div></div>
+      <div class="q-grp"><p class="q-title">บ้านนี้อยู่มากี่ปีแล้ว</p><div class="opts" id="q-years"></div></div>
+      <div class="form-nav"><button class="btn-prev" type="button" onclick="goStep(3)">ย้อนกลับ</button><button class="btn-next" type="button" onclick="goStep(5)">ถัดไป</button></div>
     </div>
-    <input type="file" id="photo-in2" accept="image/*">
-    <div class="guide-box"><p>✓ &nbsp;ถ้าแนบภาพเพิ่ม ระบบจะอ่านต่อจากหน้าบ้านเข้าสู่โถงแรก ทางเดินหลัก ห้องนั่งเล่น และจุดที่ใช้งานจริง เพื่อแยกภาพรวมหน้าบ้านกับภายในบ้านให้ชัดขึ้น</p></div>
-    <div class="guide-box"><p>ระบบจะวิเคราะห์ ✓ หน้าบ้าน ✓ การรับพลังงาน ✓ ความโปร่งโล่ง ✓ การใช้งานจริง ✓ จุดที่ควรแก้ก่อน ✓ ผลกระทบต่อการเงิน ✓ ผลกระทบต่อความสัมพันธ์ ✓ ผลกระทบต่อความสบายใจ<br>ใช้เวลาประมาณ 30-60 วินาที</p></div>
-    <div class="guide-box"><p>🔒 &nbsp;เพื่อความเป็นส่วนตัว ควรใช้ภาพที่ไม่เห็นใบหน้า ทะเบียนรถ เอกสาร หรือข้อมูลสำคัญชัดเจน ภาพจะใช้เพื่อวิเคราะห์เบื้องต้นจากข้อมูลที่ได้รับเท่านั้น</p></div>
-    <button class="btn-analyze" onclick="doAnalyze()">วิเคราะห์ฮวงจุ้ยบ้านฉัน ✦</button>
+    <div class="form-step" data-step="5">
+      <p class="step-kicker">Step 5 / 6</p>
+      <p class="step-title">แนบภาพหน้าบ้าน</p>
+      <p class="step-sub">ภาพนี้สำคัญที่สุด เพราะใช้ดูประตูหลัก ทางเดิน รั้ว พื้น และของที่บีบพลังงานด้านหน้า</p>
+      <div class="sec-hdr"><div class="sec-num">5</div><span class="sec-title">ภาพหน้าบ้านสำหรับการวิเคราะห์</span></div>
+      <div class="upload-zone" id="uz" onclick="document.getElementById('photo-in').click()">
+        <span class="upload-ico">📷</span>
+        <p><strong>อัพโหลดภาพหน้าบ้านของคุณ</strong></p>
+        <p>ถ่ายจากหน้าบ้านตรงๆ ให้เห็นรั้ว ประตู ทางเดิน และตัวบ้าน ถ่ายกลางวันจะดีที่สุด อย่าซูมเฉพาะประตู และอย่าให้มีรถบังหน้าบ้าน</p>
+      </div>
+      <img id="photo-prev" alt="ภาพหน้าบ้าน">
+      <div class="upload-success" id="upload-ok-front">
+        <span class="us-ico">✓</span><span id="upload-ok-front-name">แนบภาพสำเร็จ</span>
+        <span class="upload-change" onclick="document.getElementById('photo-in').click()">เปลี่ยน</span>
+      </div>
+      <input type="file" id="photo-in" accept="image/*">
+      <div class="guide-box"><p>📸 &nbsp;ภาพที่ดีควรเห็นหน้าบ้านเต็มเฟรม ทางเข้าจากรั้วถึงประตูหลัก พื้นหน้าบ้าน รั้ว ของวาง ต้นไม้ และสภาพแวดล้อมด้านหน้า</p></div>
+      <div class="form-nav"><button class="btn-prev" type="button" onclick="goStep(4)">ย้อนกลับ</button><button class="btn-next" type="button" onclick="goStep(6)">ถัดไป</button></div>
+    </div>
+    <div class="form-step" data-step="6">
+      <p class="step-kicker">Step 6 / 6</p>
+      <p class="step-title">เพิ่มภาพภายใน ถ้ามี</p>
+      <p class="step-sub">ถ่ายโถงแรกหลังเปิดประตูหรือพื้นที่ที่รู้สึกติดขัด จะช่วยให้ผลแม่นขึ้นและบอกจุดที่ควรถ่ายเพิ่มได้ตรงกว่า</p>
+      <div class="sec-hdr"><div class="sec-num">6</div><span class="sec-title">เพิ่มความแม่นยำอีก 30-40%</span></div>
+      <div class="upload-zone secondary" id="uz2" onclick="document.getElementById('photo-in2').click()">
+        <span class="upload-ico">🛋️</span>
+        <p><strong>แนบภาพโถงแรกหรือพื้นที่ที่รู้สึกว่ามีปัญหา</strong></p>
+        <p>ควรเห็นโถงแรกหลังเปิดประตู ห้องนั่งเล่น ทางเดินหลัก หรือบริเวณที่รู้สึกว่าติดขัด</p>
+      </div>
+      <img id="photo-prev2" alt="ภาพภายในบ้าน">
+      <div class="upload-success" id="upload-ok-interior">
+        <span class="us-ico">✓</span><span id="upload-ok-interior-name">แนบภาพสำเร็จ</span>
+        <span class="upload-change" onclick="document.getElementById('photo-in2').click()">เปลี่ยน</span>
+      </div>
+      <input type="file" id="photo-in2" accept="image/*">
+      <div class="guide-box"><p>✓ &nbsp;ถ้าแนบภาพเพิ่ม ระบบจะอ่านต่อจากหน้าบ้านเข้าสู่โถงแรก ทางเดินหลัก ห้องนั่งเล่น และจุดที่ใช้งานจริง เพื่อแยกภาพรวมหน้าบ้านกับภายในบ้านให้ชัดขึ้น</p></div>
+      <div class="guide-box"><p>ระบบจะวิเคราะห์ ✓ หน้าบ้าน ✓ การรับพลังงาน ✓ ความโปร่งโล่ง ✓ การใช้งานจริง ✓ จุดที่ควรแก้ก่อน ✓ ผลกระทบต่อการเงิน ✓ ผลกระทบต่อความสัมพันธ์ ✓ ผลกระทบต่อความสบายใจ<br>ใช้เวลาประมาณ 30-60 วินาที</p></div>
+      <div class="guide-box"><p>🔒 &nbsp;เพื่อความเป็นส่วนตัว ควรใช้ภาพที่ไม่เห็นใบหน้า ทะเบียนรถ เอกสาร หรือข้อมูลสำคัญชัดเจน ภาพจะใช้เพื่อวิเคราะห์เบื้องต้นจากข้อมูลที่ได้รับเท่านั้น</p></div>
+      <div class="form-nav"><button class="btn-prev" type="button" onclick="goStep(5)">ย้อนกลับ</button><button class="btn-analyze" type="button" onclick="doAnalyze()">วิเคราะห์ฮวงจุ้ยบ้านฉัน ✦</button></div>
+    </div>
   </div>
 </div>
 
@@ -702,6 +760,7 @@ body.result-mode .float-actions{display:flex}
         <div class="score-num-lg" id="r-score">—</div>
       </div>
       <div class="score-hero-info">
+        <div class="score-status" id="r-score-status"><span class="score-status-ico">◇</span><span>กำลังประเมินสถานะ</span></div>
         <p class="score-lbl" id="r-slbl">—</p>
         <p class="score-sub">คะแนนฮวงจุ้ยบ้าน จาก 100</p>
       </div>
@@ -835,6 +894,42 @@ var LIFF_PROFILE=null;
 var CURRENT_RESULT=null;
 var photoB64=null,photoMime='image/jpeg';
 var interiorB64=null,interiorMime='image/jpeg';
+var FORM_STEP=1,FORM_TOTAL=6,FORM_STARTED=false;
+function startSurvey(){
+  if(!FORM_STARTED){FORM_STARTED=true;trackEvent('fengshui_form_start',{step:1});}
+  FORM_STEP=1;updateFormStep();show('survey');
+}
+function stepReady(step){
+  if(step===1) return !!SEL.type;
+  if(step===2) return !!(SEL.dir&&SEL.env);
+  if(step===3) return !!(SEL.pain&&SEL.pain.length);
+  if(step===4) return !!(SEL.usage&&SEL.years);
+  if(step===5) return !!photoB64;
+  return true;
+}
+function goStep(step){
+  if(step>FORM_STEP&&!stepReady(FORM_STEP)){
+    var messages={
+      1:'เลือกประเภทบ้านก่อนนะครับ',
+      2:'เลือกทิศหน้าบ้านและสภาพแวดล้อมรอบบ้านก่อนนะครับ',
+      3:'เลือกปัญหาที่บ้านกำลังเจออย่างน้อย 1 ข้อก่อนนะครับ',
+      4:'เลือกการใช้งานบ้านและระยะเวลาที่อยู่ก่อนนะครับ',
+      5:'แนบภาพหน้าบ้านก่อนนะครับ'
+    };
+    var msg=messages[FORM_STEP]||'กรอกข้อมูลหน้านี้ให้ครบก่อนนะครับ';
+    alert(msg);return;
+  }
+  FORM_STEP=Math.max(1,Math.min(FORM_TOTAL,step));
+  trackEvent('fengshui_form_step',{step:FORM_STEP});
+  updateFormStep();
+  window.scrollTo(0,0);
+}
+function updateFormStep(){
+  document.querySelectorAll('.form-step').forEach(function(el){el.classList.toggle('active',Number(el.getAttribute('data-step'))===FORM_STEP);});
+  var mini=document.getElementById('step-mini');
+  if(mini){mini.innerHTML='';for(var i=1;i<=FORM_TOTAL;i++){var d=document.createElement('span');d.className='step-dot'+(i<=FORM_STEP?' on':'');mini.appendChild(d);}}
+  updateProg();
+}
 var qDefs=[
   {key:'type',id:'q-type',items:[
     {v:'บ้านเดี่ยว',e:'🏠'},
@@ -949,6 +1044,7 @@ function bindPhoto(inputId,previewId,zoneId,kind){
       var img=await compressImage(f,kind);
       if(kind==='front'){photoMime=img.mime;photoB64=img.b64;}
       else{interiorMime=img.mime;interiorB64=img.b64;}
+      trackEvent(kind==='front'?'fengshui_upload_front':'fengshui_upload_interior',{step:FORM_STEP,file_size:f.size||0});
       var p=document.getElementById(previewId);
       p.src=img.dataUrl;p.style.display='block';
       document.getElementById(zoneId).style.display='none';
@@ -962,6 +1058,7 @@ function bindPhoto(inputId,previewId,zoneId,kind){
         }
       }
       updateProg();
+      updateFormStep();
     }catch(err){
       alert('อ่านรูปไม่สำเร็จ กรุณาลองเลือกรูปใหม่อีกครั้ง');
     }
@@ -972,7 +1069,8 @@ bindPhoto('photo-in2','photo-prev2','uz2','interior');
 function collectDetails(){return {pain:(SEL.pain||[]).join(', '),usage:SEL.usage||'',years:SEL.years||''};}
 function updateProg(){
   var b=[SEL.type,SEL.dir,SEL.env,(SEL.pain&&SEL.pain.length?SEL.pain.join(','):''),SEL.usage,SEL.years].filter(Boolean).length;
-  var pct=Math.round((b/6*55)+(photoB64?30:0)+(interiorB64?15:0));
+  var stepBase=(FORM_STEP-1)*(70/(FORM_TOTAL-1));
+  var pct=Math.round(Math.max(stepBase,(b/6*55)+(photoB64?30:0)+(interiorB64?15:0)));
   document.getElementById('prog').style.width=Math.min(pct,100)+'%';
 }
 function show(id){document.querySelectorAll('.sc').forEach(function(s){s.classList.remove('on')});document.getElementById('s-'+id).classList.add('on');document.body.classList.toggle('result-mode',id==='res');window.scrollTo(0,0);}
@@ -1021,7 +1119,7 @@ function buildResult(sel){
       {title:'จุดที่ควรดูจากหน้าบ้าน',desc:'ให้ดูว่าทางเดินเข้าบ้านเปิดโล่งไหม ประตูหลักมองเห็นชัดหรือเปล่า และมีของวางบีบทางเข้าจนทำให้หน้าบ้านดูอึดอัดหรือไม่'},
       {title:'ข้อจำกัดของการวิเคราะห์',desc:'หากภาพเห็นหน้าบ้านหรือภายในบ้านไม่ครบ รายงานนี้จะเป็นการประเมินเบื้องต้นและควรตรวจพื้นที่จริงเพิ่มเติม'}],
     frontPart:{title:'หน้าบ้านภาพรวม',desc:'หน้าบ้านคือจุดแรกที่บ้านรับคน รับลม และรับสายตาเข้ามา หากทางเข้าอ่านไม่ชัดหรือมีของบังมากเกินไป บ้านจะดูอึดอัดตั้งแต่ก่อนเข้าประตู จุดแรกที่ควรทำคือเปิดทางเดินและทำให้ประตูหลักเด่นขึ้น'},
-    interiorPart:{title:'ภาพรวมภายในบ้าน',desc:interiorB64?'ภาพภายในช่วยดูว่าพอเข้าประตูแล้วทางเดิน แสง และการวางของส่งต่อความรู้สึกในบ้านอย่างไร':'ยังไม่ได้แนบภาพภายในบ้าน จึงยังไม่สรุปภายในแทนหน้างานจริง แนะนำให้ถ่ายโถงแรกหลังเปิดประตูและทางเดินหลักเพิ่ม'},
+    interiorPart:{title:'ภาพรวมภายในบ้าน',desc:interiorB64?'ภาพภายในช่วยดูว่าพอเข้าประตูแล้วทางเดิน แสง และการวางของส่งต่อความรู้สึกในบ้านอย่างไร':'ยังไม่ได้แนบภาพภายในบ้าน จึงยังไม่เห็นโถงแรก ทางเดินหลัก และพื้นที่หลังประตูหลัก ถ้าอยากให้แม่นขึ้น ให้ยืนหลังประตูแล้วถ่ายเข้าไปให้เห็นทางเดิน ห้องนั่งเล่น และของวางใกล้ประตู'},
     headline:score>=70?'หน้าบ้านมีพื้นฐานใช้งานได้ แต่ยังควรจัดให้ชัดขึ้น':score>=55?'หน้าบ้านยังมีจุดติดขัดที่ควรจัดให้โปร่งขึ้น':'หน้าบ้านควรตรวจหน้างานก่อนวางแผนปรับ',
     scoreLabel:score>=75?'ดีมาก':score>=60?'ดี':score>=48?'พอใช้':'ควรตรวจเพิ่มเติม',
     good:[
@@ -1039,7 +1137,8 @@ function buildResult(sel){
       {title:'ระดับพื้นและทางเดินเข้าบ้าน',hint:'ควรดูว่าทางเข้าบีบหรือเปิดรับดีแค่ไหน'},
       {title:'ของหนักและจุดรกหน้าบ้าน',hint:'ควรจัดลำดับว่าจะย้าย พราง หรือเก็บจุดไหนก่อน'},
       {title:'สี วัสดุ และจุดเสริมหน้าบ้าน',hint:'ควรเลือกให้เข้ากับทิศและสภาพบ้าน'},
-      {title:'ภาพรวมหลังประตูหลัก',hint:'ควรดูต่อว่าพอเข้าบ้านแล้วติดขัดตรงไหน'}
+      {title:'พื้นที่หลังประตูหลัก',hint:'ควรดูต่อว่าพอเข้าบ้านแล้วติดขัดตรงไหน'},
+      {title:'ยังเหลือจุดที่ปรับเพิ่มได้',hint:'ผังห้องน้ำ ครัว ห้องนอนใหญ่ และตำแหน่งเตาอาจเปลี่ยนลำดับการแก้ได้'}
     ],
     omen:pickOmen(sel,0,score)
   };
@@ -1110,7 +1209,7 @@ async function doAnalyze(){
       R={score:ar.score,needsExpert:ar.needsExpert,headline:ar.headline,scoreLabel:ar.scoreLabel,
          frontPart:ar.frontPart,interiorPart:ar.interiorPart,typeCheck:ar.typeCheck,observations:ar.observations||[],good:ar.good,bad:(ar.bad||[]).map(function(b){return Object.assign({},b,{masked:false})}),
          fixFree:(ar.fix||[]).slice(0,2),
-         fixLocked:(ar.fix||[]).slice(2,8).map(function(f){return {title:f.title||'จุดที่ควรให้ซินแสดูต่อ',hint:f.desc||'ควรวิเคราะห์ร่วมกับพื้นที่จริง'};}),
+         fixLocked:(ar.fix||[]).slice(2,8).map(function(f,i){return {title:lockedTitle(f.title,i),hint:f.desc||'ควรวิเคราะห์ร่วมกับพื้นที่จริง'};}),
          omen:ar.omen};
     }catch(e){console.log('API fallback:',e.message);trackEvent('fengshui_analyze_fallback',{reason:String(e.message||'').slice(0,80)});R=buildResult(SEL);R.observations.unshift({title:'รอบนี้ยังอ่านภาพละเอียดไม่สำเร็จ',desc:'รายงานนี้จึงเป็นภาพรวมเบื้องต้นจากข้อมูลที่เลือก หากต้องการผลที่เจาะจากภาพจริง แนะนำให้ลองแนบภาพหน้าบ้านที่ชัดอีกครั้ง โดยให้เห็นประตูหลัก ทางเดิน และพื้นที่หน้าบ้านครบ'});}
 
@@ -1144,12 +1243,23 @@ async function doAnalyze(){
 function escapeHtml(s){return String(s==null?'':s).replace(/[&<>'"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c];});}
 function cleanText(s){return String(s==null?'':s).replace(/\s+/g,' ').trim();}
 function normalizeItems(items,max){return (Array.isArray(items)?items:[]).map(function(it){return typeof it==='string'?{title:it,desc:''}:it||{};}).filter(function(it){return cleanText(it.title)||cleanText(it.desc);}).slice(0,max||5);}
+function lockedTitle(title,index){
+  var t=cleanText(title);
+  if(t&&t!=='จุดที่ควรให้ซินแสดูต่อ') return t;
+  return ['ตำแหน่งประตูหลัก','สีและวัสดุหน้าบ้าน','พื้นที่หลังประตูหลัก','ระดับพื้นและทางเดิน','ครัวและตำแหน่งเตา','ห้องนอนใหญ่กับผังบ้าน','ยังเหลือจุดที่ปรับเพิ่มได้'][index%7];
+}
 function scoreMeaning(score){
   if(score>=95) return 'ส่งเสริมเจ้าของได้เต็มศักยภาพ';
   if(score>=80) return 'พลังงานดี ยังปรับเพิ่มได้';
   if(score>=65) return 'มีจุดติดขัด ควรปรับให้ถูกจุด';
   if(score>=50) return 'มีหลายจุดที่ควรรีบปรับ';
   return 'มีหลายจุดที่กระทบการอยู่อาศัย';
+}
+function scoreStatus(score){
+  if(score>=86) return {cls:'excellent',icon:'✦',text:'สถานะดีมาก'};
+  if(score>=76) return {cls:'good',icon:'◆',text:'สถานะดี'};
+  if(score>=60) return {cls:'warn',icon:'△',text:'เริ่มมีจุดเสี่ยง'};
+  return {cls:'danger',icon:'!',text:'ควรรีบตรวจต่อ'};
 }
 function normalizeResult(R){
   R=R||{};
@@ -1163,22 +1273,23 @@ function normalizeResult(R){
   R.good=normalizeItems(R.good,3);
   R.bad=normalizeItems(R.bad,5);
   R.frontPart=R.frontPart||{title:'หน้าบ้านภาพรวม',desc:'ประเมินจากภาพหน้าบ้านร่วมกับทิศและสภาพแวดล้อมที่เลือก'};
-  R.interiorPart=R.interiorPart||{title:'ภาพรวมภายในบ้าน',desc:interiorB64?'ประเมินจากภาพภายในบ้านที่แนบมา':'ยังไม่ได้แนบภาพภายในบ้าน จึงใช้ข้อมูลหน้าบ้านเป็นหลัก'};
+  R.interiorPart=R.interiorPart||{title:'ภาพรวมภายในบ้าน',desc:interiorB64?'ประเมินจากภาพภายในบ้านที่แนบมา':'ยังไม่ได้แนบภาพภายในบ้าน จึงยังไม่เห็นโถงแรก ทางเดินหลัก และพื้นที่หลังประตูหลัก ถ้าอยากให้แม่นขึ้น ให้ถ่ายจากหลังประตูหลักหันกล้องเข้าบ้านให้เห็นทางเดินและห้องนั่งเล่น'};
   if(!R.good.length){R.good=[{title:'มีข้อมูลตั้งต้นเพียงพอสำหรับประเมินเบื้องต้น',desc:'ประเภทบ้าน ทิศหน้าบ้าน และสภาพแวดล้อมช่วยให้เห็นแนวทางพลังงานของบ้านได้ชัดขึ้น'}];}
   if(!R.bad.length){R.bad=[{title:'ยังควรตรวจภาพหน้าบ้านอย่างละเอียด',desc:'หากภาพไม่เห็นประตู ทางเดิน และสิ่งกีดขวางครบ การประเมินบางจุดอาจต้องดูพื้นที่จริงเพิ่มเติม'}];}
   R.fixFree=Array.isArray(R.fixFree)?R.fixFree:(R.fixFree?[R.fixFree]:null);
   if(!R.fixFree||!R.fixFree.length){R.fixFree=normalizeItems(Array.isArray(R.fix)?R.fix.slice(0,2):[],2);}
   if(!R.fixFree.length){R.fixFree=[{title:'เปิดหน้าบ้านให้โปร่งและเห็นประตูหลักชัด',desc:'จัดของหน้าบ้าน ตัดแต่งต้นไม้ และเปิดทางเดินเข้าให้เดินง่าย มองเห็นประตูได้ชัดขึ้น'},{title:'จัดของสองข้างทางเข้าให้เบาลง',desc:'ย้ายของที่ไม่จำเป็นออกจากขอบทางเดินและหน้าประตู เพื่อให้บ้านดูโล่งและใช้งานสะดวกขึ้น'}];}
-  R.fixLocked=Array.isArray(R.fixLocked)?R.fixLocked:normalizeItems((R.fix||[]).slice(2),8).map(function(it){return {title:it.title||'จุดที่ควรให้ซินแสดูต่อ',hint:it.desc||'ควรวิเคราะห์ร่วมกับพื้นที่จริง'};});
+  R.fixLocked=Array.isArray(R.fixLocked)?R.fixLocked:normalizeItems((R.fix||[]).slice(2),8).map(function(it,i){return {title:lockedTitle(it.title,i),hint:it.desc||'ควรวิเคราะห์ร่วมกับพื้นที่จริง'};});
   var lockFallback=[
     {title:'ตำแหน่งประตูหลักกับทิศบ้าน',hint:'ควรดูหน้างานเพื่อจัดลำดับการปรับให้ตรงจุด'},
     {title:'ทางลาดและระดับพื้นหน้าบ้าน',hint:'ควรดูว่าทางเข้าไหลลื่นหรือบีบพลังงานตรงไหน'},
     {title:'ตู้ไฟ สายไฟ และของหนักด้านหน้า',hint:'ควรดูว่าจุดไหนควรย้ายหรือพรางสายตาโดยไม่กระทบการใช้งาน'},
     {title:'สี วัสดุ และจุดเสริมหน้าบ้าน',hint:'ควรเลือกให้เข้ากับทิศและภาพรวมของบ้านหลังนี้'},
-    {title:'ภาพรวมภายในหลังประตู',hint:'ควรดูต่อว่าพลังงานจากหน้าบ้านเข้าไปแล้วติดขัดตรงไหน'}
+    {title:'พื้นที่หลังประตูหลัก',hint:'ควรดูต่อว่าพลังงานจากหน้าบ้านเข้าไปแล้วติดขัดตรงไหน'},
+    {title:'ยังเหลือจุดที่ปรับเพิ่มได้',hint:'ผังห้องน้ำ ครัว ห้องนอนใหญ่ และตำแหน่งเตาอาจเปลี่ยนลำดับการแก้ได้'}
   ];
   while(R.fixLocked.length<5){R.fixLocked.push(lockFallback[R.fixLocked.length%lockFallback.length]);}
-  R.fixLocked=R.fixLocked.slice(0,6);
+  R.fixLocked=R.fixLocked.slice(0,6).map(function(it,i){return {title:lockedTitle(it.title,i),hint:it.hint||it.desc||'ควรวิเคราะห์ร่วมกับพื้นที่จริง'};});
   R.omen=cleanText(R.omen)||'บ้านหลังนี้ยังมีศักยภาพในการปรับพลังงานให้ดีขึ้น โดยควรเริ่มจากหน้าบ้าน ประตูหลัก และทางเดินเข้าเป็นอันดับแรก';
   R.needsExpert=!!R.needsExpert;
   return R;
@@ -1191,6 +1302,8 @@ function renderResult(R){
   var rhlsub=document.getElementById('r-headline-sub');if(rhlsub){var _p=[];if(window._houseType)_p.push(window._houseType);if(window._facing)_p.push('ทิศ'+window._facing);rhlsub.textContent=_p.join(' · ');rhlsub.style.display=_p.length?'block':'none';}
   document.getElementById('r-score').textContent=R.score;
   document.getElementById('r-slbl').textContent=R.scoreLabel;
+  var st=scoreStatus(R.score),stEl=document.getElementById('r-score-status');
+  if(stEl){stEl.className='score-status '+st.cls;stEl.innerHTML='<span class="score-status-ico">'+escapeHtml(st.icon)+'</span><span>'+escapeHtml(st.text)+'</span>';}
   var circ=2*Math.PI*52;
   setTimeout(function(){document.getElementById('r-ring').style.strokeDashoffset=circ-(circ*R.score/100);document.getElementById('r-sbar').style.width=R.score+'%';},400);
 
@@ -1212,7 +1325,7 @@ function mkCardsFull(items,cid,cls){var c=document.getElementById(cid);c.innerHT
   });
   // Add note at end of fix section
   var fn=document.createElement('div');fn.className='fix-note';
-  fn.innerHTML='<span class="fix-note-icon">💡</span><p>จุดที่ล็อกไว้ด้านบนต้องดูพื้นที่จริง เพราะแต่ละบ้านมีทิศ ผัง และพลังงานเฉพาะที่ไม่เหมือนกัน การปรับโดยไม่ดูหน้างานอาจให้ผลแตกต่างจากที่ควรจะเป็น</p>';
+  fn.innerHTML='<span class="fix-note-icon">💡</span><p>ยังเหลืออีกหลายจุดที่ปรับให้บ้านดีขึ้นได้ เช่น ผังห้องน้ำ ครัว ห้องนอนใหญ่ และตำแหน่งเตา จุดเหล่านี้ควรดูร่วมกับพื้นที่จริง เพื่อจัดลำดับการแก้ให้คุ้มและไม่แก้ผิดตำแหน่ง</p>';
   fl.appendChild(fn);
 
   var omenEl=document.getElementById('r-omen'); if(omenEl){omenEl.textContent=R.omen||'';}
@@ -1220,8 +1333,21 @@ function mkCardsFull(items,cid,cls){var c=document.getElementById(cid);c.innerHT
   document.getElementById('r-testi').style.display='flex';
   document.getElementById('sec-promo').style.display='block';
   var serviceFirst=R.score<75;
+  var highCta=document.getElementById('sec-cta-high'),midCta=document.getElementById('sec-cta-mid');
+  if(highCta){
+    var ht=highCta.querySelector('.cta-title'),hs=highCta.querySelector('.cta-sub'),ha=highCta.querySelector('.btn-cta-line');
+    if(ht) ht.textContent='ส่งรูปเพิ่มให้ซินแสดูต่อ';
+    if(hs) hs.textContent='คะแนนต่ำกว่า 75 ควรให้ซินแสดูภาพเพิ่มก่อนตัดสินใจแก้ เพื่อรู้ว่าควรเริ่มตรงไหน';
+    if(ha) ha.innerHTML='💬 &nbsp;ส่งรูปเพิ่มให้ซินแสดูต่อ ↗';
+  }
+  if(midCta){
+    var mt=midCta.querySelector('.cta-title'),ms=midCta.querySelector('.cta-sub'),ma=midCta.querySelector('.btn-cta-line');
+    if(mt) mt.textContent='ต่อยอดจากผลวิเคราะห์ด้วย Ebook';
+    if(ms) ms.textContent='เหมาะกับบ้านที่พื้นฐานดีและอยากเริ่มปรับเองแบบค่อยเป็นค่อยไป';
+    if(ma) ma.innerHTML='💬 &nbsp;สั่ง Ebook ผ่าน LINE ↗';
+  }
   var promo=document.querySelector('#sec-promo .promo-box');
-  if(promo){promo.innerHTML=serviceFirst?'<div class="promo-tag">✦ ขั้นตอนถัดไป</div><p class="promo-title">อยากให้ซินแสช่วยดูหน้างานไหม?</p><p class="promo-desc">ผลที่เห็นด้านบนคือสิ่งที่ตรวจได้จากภาพ จุดที่ล็อกไว้ต้องดูพื้นที่จริงถึงจะแนะนำได้ตรงจุด ซินแสแบงค์ช่วยวิเคราะห์ต่อและจัดลำดับการปรับที่เหมาะกับบ้านหลังนี้โดยเฉพาะ</p><div class="promo-price"><span class="promo-amount">นัดปรึกษาผ่าน LINE</span><span class="promo-unit">ดูรายละเอียดบริการจัดฮวงจุ้ย</span></div><p class="promo-note">เหมาะกับบ้านที่คะแนนต่ำกว่า 75% หรือมีจุดที่ควรตรวจพื้นที่จริง</p>':'<div class="promo-tag">✦ ขั้นตอนถัดไป</div><p class="promo-title">ต่อยอดเองด้วย Ebook จัดฮวงจุ้ย</p><p class="promo-desc">คุณได้ภาพรวมของบ้านแล้ว หากอยากค่อยๆ ปรับเอง หนังสือจะช่วยให้เข้าใจหลักการจัดพื้นที่ สี ทิศ และจุดที่ควรสังเกตในบ้าน</p><div class="promo-price"><span class="promo-amount">สั่ง Ebook ผ่าน LINE</span><span class="promo-unit">เริ่มจากการเรียนรู้และปรับเอง</span></div><p class="promo-note">เหมาะกับบ้านที่คะแนนตั้งแต่ 75% ขึ้นไป หรือบ้านที่ต้องการต่อยอดจากพื้นฐานเดิม</p>';}
+  if(promo){promo.innerHTML=serviceFirst?'<div class="promo-tag">✦ ขั้นตอนถัดไป</div><p class="promo-title">ภาพยังมีจุดที่ควรดูเพิ่ม</p><p class="promo-desc">ผลที่เห็นด้านบนบอกจุดเสี่ยงหลักแล้ว แต่บ้านคะแนนต่ำกว่า 75 ควรส่งรูปเพิ่มให้ซินแสดูต่อก่อน เพื่อแยกว่าต้องเริ่มจากประตูหลัก พื้นที่หลังประตู สีวัสดุ หรือผังภายใน</p><div class="promo-price"><span class="promo-amount">ส่งรูปเพิ่ม</span><span class="promo-unit">ให้ซินแสดูต่อผ่าน LINE</span></div><p class="promo-note">คุณจะได้แนวทางต่อก่อน ไม่ต้องรู้สึกว่าถูกขายทันที</p>':'<div class="promo-tag">✦ ขั้นตอนถัดไป</div><p class="promo-title">ต่อยอดเองด้วย Ebook จัดฮวงจุ้ย</p><p class="promo-desc">คุณได้ภาพรวมของบ้านแล้ว หากอยากค่อยๆ ปรับเอง หนังสือจะช่วยให้เข้าใจหลักการจัดพื้นที่ สี ทิศ และจุดที่ควรสังเกตในบ้าน</p><div class="promo-price"><span class="promo-amount">สั่ง Ebook ผ่าน LINE</span><span class="promo-unit">เริ่มจากการเรียนรู้และปรับเอง</span></div><p class="promo-note">เหมาะกับบ้านที่คะแนนตั้งแต่ 75% ขึ้นไป หรือบ้านที่ต้องการต่อยอดจากพื้นฐานเดิม</p>';}
   document.getElementById('sec-cta-high').style.display='none';
   document.getElementById('sec-cta-mid').style.display='none';
   document.getElementById(serviceFirst?'sec-cta-high':'sec-cta-mid').style.display='block';
@@ -1260,7 +1386,7 @@ function shareTo(channel){
   var target='';
   if(channel==='facebook') target='https://www.facebook.com/sharer/sharer.php?u='+url+'&quote='+text;
   if(channel==='line') target='https://social-plugins.line.me/lineit/share?url='+url+'&text='+text;
-  if(target) window.open(target,'_blank','noopener,noreferrer,width=680,height=620');
+  if(target){trackEvent('fengshui_share_success',{type:channel});window.open(target,'_blank','noopener,noreferrer,width=680,height=620');shareOk('เปิดหน้าต่างแชร์แล้ว');}
 }
 function wrapCanvasText(ctx,text,x,y,maxWidth,lineHeight,maxLines){
   var words=String(text||'').split(/\s+/), line='', lines=[];
@@ -1290,11 +1416,11 @@ function makeShareCanvas(){
 function canvasBlob(canvas){return new Promise(function(resolve){canvas.toBlob(resolve,'image/png',.92);});}
 async function shareAsImage(){
   var canvas=makeShareCanvas(), blob=await canvasBlob(canvas), file=new File([blob],'fengshui-result.png',{type:'image/png'});
-  if(navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){try{await navigator.share({files:[file],title:'ผลตรวจฮวงจุ้ยบ้าน'}); shareOk('แชร์ภาพแล้ว'); return;}catch(e){if(e.name==='AbortError')return;}}
-  downloadShareImage();
+  if(navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){try{await navigator.share({files:[file],title:'ผลตรวจฮวงจุ้ยบ้าน'}); trackEvent('fengshui_share_success',{type:'image'}); shareOk('แชร์ภาพสำเร็จแล้ว'); return;}catch(e){if(e.name==='AbortError')return;}}
+  shareOk('เครื่องนี้ยังไม่รองรับแชร์ภาพตรงจากเว็บ ให้แชร์ผ่าน LINE หรือ Facebook จากปุ่มด้านล่างก่อนนะครับ');
 }
 function downloadShareImage(){
-  var a=document.createElement('a'); a.href=makeShareCanvas().toDataURL('image/png'); a.download='fengshui-result.png'; a.click(); shareOk('ดาวน์โหลดรูปแล้ว');
+  shareOk('ปิดการเซฟตรงแล้ว กรุณาแชร์จากปุ่มในระบบเพื่อบันทึกหลังแชร์สำเร็จ');
 }
 function clip(t,cb){if(navigator.clipboard){navigator.clipboard.writeText(t).then(cb).catch(function(){leg(t,cb)});}else leg(t,cb);}
 function leg(t,cb){var x=document.createElement('textarea');x.value=t;x.style.cssText='position:fixed;opacity:0;top:0;left:0';document.body.appendChild(x);x.select();try{document.execCommand('copy');cb();}catch(e){}document.body.removeChild(x);}
@@ -1352,11 +1478,14 @@ async function submitFollowup(){
     var data=await res.json().catch(function(){return{};});
     if(!res.ok) throw new Error(data.error||'followup failed');
     trackEvent('fengshui_followup_submit',{stored:data.stored||'',score:payload.score||0});
-    if(status)status.textContent=data.stored==='kv'?'บันทึกแล้ว ทีมงานจะตามสรุปผลผ่าน LINE':'รับข้อมูลไว้แล้ว แต่ควรตั้ง Vercel KV เพื่อให้ข้อมูลไม่หายหลัง cold start';
+    var box=document.getElementById('sec-followup');
+    if(box)box.classList.add('done');
+    if(status)status.innerHTML='<div class="followup-thanks"><strong>รับข้อมูลแล้ว</strong><br>ทีมงานจะดูผลและติดต่อกลับทาง LINE ให้นะครับ</div>';
+    if(inp)inp.disabled=true;
   }catch(e){
     if(status)status.innerHTML='บันทึกไม่สำเร็จ แนะนำให้ทัก LINE โดยตรง: <a href="https://lin.ee/qLCFQpj" target="_blank" rel="noopener" style="color:#C9A84C">เปิด LINE</a>';
   }finally{
-    if(btn){btn.disabled=false;btn.textContent='ฝากผลไว้';}
+    if(btn){btn.disabled=!!(status&&status.querySelector('.followup-thanks'));btn.textContent=status&&status.querySelector('.followup-thanks')?'ส่งข้อมูลแล้ว':'ฝากผลไว้';}
   }
 }
 
@@ -1364,7 +1493,7 @@ function resetAll(){
   window._analyzing=false;
   var _rbtn=document.querySelector('.btn-analyze');if(_rbtn){_rbtn.disabled=false;_rbtn.style.opacity='';}
   if(window._clearLoadTimer) window._clearLoadTimer();
-  SEL.type=null;SEL.dir=null;SEL.env=null;SEL.pain=[];SEL.usage=null;SEL.years=null;CURRENT_RESULT=null;photoB64=null;photoMime='image/jpeg';interiorB64=null;interiorMime='image/jpeg';
+  SEL.type=null;SEL.dir=null;SEL.env=null;SEL.pain=[];SEL.usage=null;SEL.years=null;CURRENT_RESULT=null;photoB64=null;photoMime='image/jpeg';interiorB64=null;interiorMime='image/jpeg';FORM_STEP=1;FORM_STARTED=false;
   document.querySelectorAll('.obt').forEach(function(b){b.classList.remove('sel')});
   ['photo-prev','photo-prev2'].forEach(function(id){var p=document.getElementById(id);if(p){p.style.display='none';p.src='';}})
   ;['upload-ok-front','upload-ok-interior'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});;
@@ -1372,10 +1501,13 @@ function resetAll(){
   ['photo-in','photo-in2'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   ['sec-promo','sec-cta-high','sec-cta-mid','r-testi'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
   var fs=document.getElementById('followup-status');if(fs)fs.textContent='';
-  var fi=document.getElementById('followup-line');if(fi)fi.value=LIFF_PROFILE&&LIFF_PROFILE.displayName||'';
+  var fb=document.getElementById('sec-followup');if(fb)fb.classList.remove('done');
+  var fbtn=document.getElementById('followup-btn');if(fbtn){fbtn.disabled=false;fbtn.textContent='ฝากผลไว้';}
+  var fi=document.getElementById('followup-line');if(fi){fi.disabled=false;fi.value=LIFF_PROFILE&&LIFF_PROFILE.displayName||'';}
   ['ls2','ls3','ls4'].forEach(function(id){var el=document.getElementById(id);if(el){el.classList.remove('done');el.querySelector('.lstep-ico').textContent='○';}});
   document.getElementById('lst').textContent='กำลังประมวลผล...';
   document.getElementById('prog').style.width='0%';
+  updateFormStep();
   document.querySelectorAll('.rv').forEach(function(el){el.classList.remove('vis')});
   show('land');
 }
@@ -1386,18 +1518,18 @@ initAppIntegrations();
     <div class="share-sheet-head">
       <div>
         <h3>แชร์ผลวิเคราะห์</h3>
-        <p>แนะนำให้แชร์เป็นภาพก่อน จะดูเรียบร้อยกว่า และเพื่อนเห็นคะแนนกับภาพรวมได้ทันที</p>
+        <p>แชร์จากระบบก่อน แล้วค่อยบันทึกภาพจากแอปที่แชร์สำเร็จ เพื่อให้ผลลัพธ์ถูกเห็นต่อมากขึ้น</p>
       </div>
       <button class="share-x" type="button" onclick="closeSharePanel()">×</button>
     </div>
     <div class="share-grid">
-      <button class="gold" type="button" onclick="shareAsImage()">ดาวน์โหลด/แชร์เป็นภาพ</button>
+      <button class="gold" type="button" onclick="shareAsImage()">แชร์เป็นภาพจากระบบ</button>
       <button type="button" onclick="shareTo('facebook')">Facebook</button>
       <button type="button" onclick="shareTo('line')">LINE</button>
-      <button type="button" onclick="downloadShareImage()">IG: โหลดรูปไปลงสตอรี่</button>
+      <button type="button" onclick="shareAsImage()">IG/Story: แชร์ภาพก่อน</button>
       <button type="button" onclick="copyShareText()">คัดลอกข้อความ</button>
     </div>
-    <p class="share-note">Instagram ยังไม่เปิดให้เว็บโพสต์ตรงได้ วิธีที่เนียนสุดคือโหลดรูป แล้วอัพขึ้น Story/Reels เอง</p>
+    <p class="share-note">ระบบปิดการเซฟรูปตรง ต้องแชร์จากปุ่มนี้ก่อน หากต้องการบันทึกภาพ ให้บันทึกจากแอปปลายทางหลังแชร์สำเร็จ</p>
     <p class="share-ok" id="share-status"></p>
   </div>
 </div>
