@@ -198,7 +198,7 @@ body{font-family:'Sarabun','Noto Serif Thai',sans-serif;color:var(--text);font-s
 .upload-zone p{font-size:12.5px;color:rgba(255,255,255,.44);line-height:1.8}
 .upload-zone strong{color:var(--gl);font-weight:500}
 .upload-example{margin:14px 0;padding:12px;border:1px solid rgba(201,168,76,.22);border-radius:12px;background:rgba(255,255,255,.035)}
-.upload-example img{width:100%;display:block;border-radius:10px;border:1px solid rgba(240,220,154,.2);object-fit:cover;max-height:230px}
+.upload-example img{width:100%;display:block;border-radius:10px;border:1px solid rgba(240,220,154,.2);object-fit:contain;max-height:none;background:#0b121d}
 .upload-example b{display:block;margin:10px 0 4px;color:var(--ink);font-size:15px}
 .upload-example p{font-size:13.5px;color:var(--muted);line-height:1.75}
 .photo-tips{display:grid;gap:8px;margin-top:12px}
@@ -220,6 +220,10 @@ body{font-family:'Sarabun','Noto Serif Thai',sans-serif;color:var(--text);font-s
 .part-card{padding:13px 14px;border-radius:8px;background:rgba(255,255,255,.035);border:.5px solid rgba(255,255,255,.09);font-size:13px;line-height:1.75;color:rgba(255,255,255,.7);margin-bottom:8px}
 .part-card strong{display:block;color:#fff;font-weight:500;margin-bottom:4px}
 .pcard p{margin:0;color:inherit;line-height:inherit}
+.text-list{margin:8px 0 0 0;padding-left:1.05em;color:inherit}
+.text-list li{margin:5px 0;line-height:1.72}
+.text-list li::marker{color:var(--g)}
+.text-paragraph{display:block;margin-top:6px}
 
 
 .result-disclaimer{padding:12px 22px;font-size:11px;color:rgba(255,255,255,.25);line-height:1.6;text-align:center;border-top:.5px solid rgba(255,255,255,.05)}
@@ -784,7 +788,7 @@ html,body{background:var(--nv)}
         <div class="photo-tip">ถ้ามีรถหรือของบังหน้าบ้าน ให้ถ่ายมุมที่ยังเห็นทางเดินและประตูหลักชัดที่สุด</div>
         <div class="photo-tip">หลีกเลี่ยงภาพที่มีใบหน้า ทะเบียนรถ หรือเอกสารส่วนตัวชัดเจน</div>
       </div>
-      <div class="guide-box"><p>จะวิเคราะห์เฉพาะหน้าบ้าน: ประตูหลัก ทางเดิน รั้ว พื้น แสง ของวาง สิ่งบังทางเข้า และจุดที่ควรเริ่มปรับก่อน<br>ใช้เวลาประมาณ 30-60 วินาที</p></div>
+      <div class="guide-box"><p>จะวิเคราะห์เฉพาะหน้าบ้าน: ประตูหลัก ทางเดิน รั้ว พื้น ความสว่าง ของที่วาง สิ่งบังทางเข้า ประตูตรงกันกับทางเข้าบ้านไหม และจุดที่ควรเริ่มปรับก่อน ใช้เวลาประมาณ 30-60 วินาที</p></div>
       <div class="form-nav"><button class="btn-prev" type="button" onclick="goStep(3)">ย้อนกลับ</button><button class="btn-analyze" type="button" onclick="doAnalyze()">วิเคราะห์ฮวงจุ้ยหน้าบ้าน ✦</button></div>
     </div>
   </div>
@@ -1329,6 +1333,23 @@ async function doAnalyze(){
 
 function escapeHtml(s){return String(s==null?'':s).replace(/[&<>'"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c];});}
 function cleanText(s){return String(s==null?'':s).replace(/\s+/g,' ').trim();}
+function smartTextHtml(value){
+  var text=String(value==null?'':value).replace(/\s+/g,' ').trim();
+  if(!text) return '';
+  text=text
+    .replace(/ดูรายละเอียดเพิ่มเติม/g,'ให้ซินแสดูหน้างานเพื่อเช็กของจริง')
+    .replace(/ควรดูรายละเอียดเพิ่มเติม/g,'ควรให้ซินแสดูหน้างานเพื่อเช็กของจริง')
+    .replace(/ต้องดูรายละเอียดเพิ่มเติม/g,'ควรให้ซินแสดูหน้างานเพื่อเช็กของจริง');
+  var parts=text.split(/\s*[•]\s+|\s+-\s+/).map(function(x){return cleanText(x);}).filter(Boolean);
+  if(parts.length>=3){
+    var intro='';
+    if(parts[0].length>90 || /จากภาพ|โดยรวม|หน้าบ้าน|ข้อมูล/.test(parts[0])){
+      intro='<span class="text-paragraph">'+escapeHtml(parts.shift())+'</span>';
+    }
+    return intro+'<ul class="text-list">'+parts.map(function(p){return '<li>'+escapeHtml(p)+'</li>';}).join('')+'</ul>';
+  }
+  return '<span class="text-paragraph">'+escapeHtml(text)+'</span>';
+}
 function normalizeItems(items,max){return (Array.isArray(items)?items:[]).map(function(it){return typeof it==='string'?{title:it,desc:''}:it||{};}).filter(function(it){return cleanText(it.title)||cleanText(it.desc);}).slice(0,max||5);}
 function lockedTitle(title,index){
   var t=cleanText(title);
@@ -1399,16 +1420,16 @@ function renderResult(R){
   var circ=2*Math.PI*52;
   setTimeout(function(){document.getElementById('r-ring').style.strokeDashoffset=circ-(circ*R.score/100);document.getElementById('r-sbar').style.width=R.score+'%';},400);
 
-  function mkCards(items,cid,cls){var c=document.getElementById(cid);c.innerHTML='';(items||[]).forEach(function(it){var d=document.createElement('div');d.className='pcard '+cls+(it.masked?' masked':'');d.innerHTML='<strong>'+escapeHtml(it.title||'')+'</strong><p>'+escapeHtml(it.desc||'')+'</p>';if(it.masked)d.innerHTML+='<div class="mask-fade"><span class="mask-lock">🔒</span><span class="mask-text">ข้อมูลเชิงลึก — ควรให้ผู้เชี่ยวชาญช่วยดูเพิ่มเติม</span><span class="mask-unlock">ปรึกษาซินแสแบงค์ ↗</span></div>';c.appendChild(d);});}
-function mkCardsFull(items,cid,cls){var c=document.getElementById(cid);c.innerHTML='';(items||[]).forEach(function(it){var d=document.createElement('div');d.className='pcard '+cls;d.innerHTML='<strong>'+escapeHtml(it.title||'')+'</strong><p>'+escapeHtml(it.desc||'')+'</p>';c.appendChild(d);});}
-  ['frontpart'].forEach(function(key){var el=document.getElementById('r-'+key);var data=R.frontPart;if(el&&data){el.innerHTML='<div class="part-card"><strong>'+escapeHtml(data.title||'')+'</strong>'+escapeHtml(data.desc||'')+'</div>';}});  
-  var oc=document.getElementById('r-observe');if(oc){oc.innerHTML='';(R.observations||[]).forEach(function(it){var d=document.createElement('div');d.className='obs-item';d.innerHTML='<b>'+escapeHtml(it.title||'')+'</b>'+escapeHtml(it.desc||'');oc.appendChild(d);});}
+  function mkCards(items,cid,cls){var c=document.getElementById(cid);c.innerHTML='';(items||[]).forEach(function(it){var d=document.createElement('div');d.className='pcard '+cls+(it.masked?' masked':'');d.innerHTML='<strong>'+escapeHtml(it.title||'')+'</strong><p>'+smartTextHtml(it.desc||'')+'</p>';if(it.masked)d.innerHTML+='<div class="mask-fade"><span class="mask-lock">🔒</span><span class="mask-text">ข้อมูลเชิงลึก — ควรให้ซินแสดูหน้างานเพื่อเช็กของจริง</span><span class="mask-unlock">ปรึกษาซินแสแบงค์ ↗</span></div>';c.appendChild(d);});}
+function mkCardsFull(items,cid,cls){var c=document.getElementById(cid);c.innerHTML='';(items||[]).forEach(function(it){var d=document.createElement('div');d.className='pcard '+cls;d.innerHTML='<strong>'+escapeHtml(it.title||'')+'</strong><p>'+smartTextHtml(it.desc||'')+'</p>';c.appendChild(d);});}
+  ['frontpart'].forEach(function(key){var el=document.getElementById('r-'+key);var data=R.frontPart;if(el&&data){el.innerHTML='<div class="part-card"><strong>'+escapeHtml(data.title||'')+'</strong>'+smartTextHtml(data.desc||'')+'</div>';}});  
+  var oc=document.getElementById('r-observe');if(oc){oc.innerHTML='';(R.observations||[]).forEach(function(it){var d=document.createElement('div');d.className='obs-item';d.innerHTML='<b>'+escapeHtml(it.title||'')+'</b>'+smartTextHtml(it.desc||'');oc.appendChild(d);});}
   mkCards(R.good,'r-good','good');
   mkCardsFull(R.bad,'r-bad','bad');
 
   // Fix: 1 card free + locked list
   var fc=document.getElementById('r-fix-free');
-  fc.innerHTML='';var freeItems=(R.fixFree||[]).slice(0,2);freeItems.forEach(function(f,i){var d=document.createElement('div');d.className='fix-teaser';d.innerHTML='<div class="fix-free-hdr"><span class="fix-step-num">'+(i+1)+'</span><strong>'+escapeHtml(f.title||'')+'</strong></div><p>'+escapeHtml(f.desc||'')+'</p>';fc.appendChild(d);});
+  fc.innerHTML='';var freeItems=(R.fixFree||[]).slice(0,2);freeItems.forEach(function(f,i){var d=document.createElement('div');d.className='fix-teaser';d.innerHTML='<div class="fix-free-hdr"><span class="fix-step-num">'+(i+1)+'</span><strong>'+escapeHtml(f.title||'')+'</strong></div><p>'+smartTextHtml(f.desc||'')+'</p>';fc.appendChild(d);});
   var fl=document.getElementById('r-fix-locked');fl.innerHTML='';
   (R.fixLocked||[]).forEach(function(item){
     var d=document.createElement('div');d.className='fix-locked';
