@@ -951,7 +951,8 @@ function scrollTestimonials(dir){
 }
 
 var SEL={type:null,dir:null,env:null,pain:[],usage:null,years:null};
-var APP_CONFIG={lineUrl:'https://lin.ee/qLCFQpj',kvReady:false};
+var APP_CONFIG={lineUrl:'https://lin.ee/qLCFQpj',lineLiffId:'',lineLiffEnabled:false,shareMode:'native-image-first',kvReady:false};
+var LIFF_READY=false;
 var CURRENT_RESULT=null;
 var photoB64=null,photoMime='image/jpeg';
 var FORM_STEP=1,FORM_TOTAL=4,FORM_STARTED=false;
@@ -1526,13 +1527,92 @@ function openSharePanel(){
 function closeSharePanel(){var panel=document.getElementById('share-panel'); if(panel) panel.classList.remove('show');}
 function shareOk(msg){['sm-high','sm-mid','share-status'].forEach(function(id){var e=document.getElementById(id);if(e){e.textContent=msg||'พร้อมแชร์แล้ว';setTimeout(function(){e.textContent=''},3500);}});}
 function doShare(){openSharePanel();}
-function shareTo(channel){
+async function makeShareFile(){
+  var canvas=makeShareCanvas(), blob=await canvasBlob(canvas);
+  return new File([blob],'fengshui-result-card.png',{type:'image/png'});
+}
+function shareTitleFor(channel){
+  var map={facebook:'Facebook',instagram:'Instagram',line:'LINE',tiktok:'TikTok'};
+  return map[channel]||'แอปที่เลือก';
+}
+async function shareNativeImage(channel){
+  trackEvent('fengshui_share_click',{target:channel});
+  var file=await makeShareFile();
+  if(navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
+    try{
+      await navigator.share({files:[file],title:'ผลตรวจฮวงจุ้ยบ้าน',text:'การ์ดสรุปผลตรวจฮวงจุ้ยหน้าบ้านจากซินแสแบงค์'});
+      trackEvent('fengshui_share_success',{type:channel+'_image'});
+      shareOk('สร้างการ์ดภาพแล้ว เลือก '+shareTitleFor(channel)+' ในหน้าต่างแชร์ของเครื่องได้เลย');
+      return true;
+    }catch(e){
+      if(e.name==='AbortError') return true;
+    }
+  }
+  return false;
+}
+function publicShareUrl(){
+  return location.origin && location.origin !== 'null' ? location.href : (APP_CONFIG.lineUrl||'https://lin.ee/qLCFQpj');
+}
+function lineLiffUrl(){
+  return APP_CONFIG.lineLiffId ? 'https://liff.line.me/'+encodeURIComponent(APP_CONFIG.lineLiffId) : '';
+}
+async function ensureLiffReady(){
+  if(!APP_CONFIG.lineLiffId) return false;
+  if(!window.liff){
+    try{await loadScript('https://static.line-scdn.net/liff/edge/2/sdk.js');}
+    catch(e){return false;}
+  }
+  if(LIFF_READY) return true;
+  try{
+    await liff.init({liffId:APP_CONFIG.lineLiffId});
+    LIFF_READY=true;
+    return true;
+  }catch(e){
+    trackEvent('fengshui_line_liff_failed',{message:String(e&&e.message||'init_failed').slice(0,80)});
+    return false;
+  }
+}
+async function shareViaLineLiff(){
+  var ready=await ensureLiffReady();
+  if(!ready || !window.liff || !liff.isInClient()) return false;
+  if(!liff.isApiAvailable || !liff.isApiAvailable('shareTargetPicker')) return false;
+  try{
+    await liff.shareTargetPicker([{type:'text',text:shareText()+'\n\n'+publicShareUrl()}]);
+    trackEvent('fengshui_share_success',{type:'line_liff'});
+    shareOk('ส่งเข้า LINE ผ่าน LIFF แล้ว');
+    return true;
+  }catch(e){
+    if(e && e.code === 'USER_CANCEL') return true;
+    trackEvent('fengshui_line_liff_failed',{message:String(e&&e.message||'share_failed').slice(0,80)});
+    return false;
+  }
+}
+async function shareTo(channel){
+  if(channel==='instagram'||channel==='tiktok'||channel==='facebook'){
+    var ok=await shareNativeImage(channel);
+    if(ok) return;
+    if(channel==='facebook'){
+      var fbText=encodeURIComponent(shareText());
+      var fbUrl=encodeURIComponent(publicShareUrl());
+      window.open('https://www.facebook.com/sharer/sharer.php?u='+fbUrl+'&quote='+fbText,'_blank','noopener,noreferrer,width=680,height=620');
+      trackEvent('fengshui_share_success',{type:'facebook_url'});
+      shareOk('เปิด Facebook Share แล้ว ถ้าต้องการแชร์เป็นภาพให้ใช้บนมือถือที่รองรับ native share');
+      return;
+    }
+    shareOk(shareTitleFor(channel)+' ไม่มี web API สำหรับส่งภาพเข้าฟีด/สตอรี่โดยตรง ให้เปิดบนมือถือแล้วเลือกแอปจากหน้าต่างแชร์');
+    return;
+  }
+  if(channel==='line'){
+    var nativeLineOk=await shareNativeImage(channel);
+    if(nativeLineOk) return;
+    var liffOk=await shareViaLineLiff();
+    if(liffOk) return;
+  }
   var text=encodeURIComponent(shareText());
-  var url=encodeURIComponent(location.href);
+  var url=encodeURIComponent(publicShareUrl());
   var target='';
-  if(channel==='facebook') target='https://www.facebook.com/sharer/sharer.php?u='+url+'&quote='+text;
   if(channel==='line') target='https://social-plugins.line.me/lineit/share?url='+url+'&text='+text;
-  if(target){trackEvent('fengshui_share_success',{type:channel});window.open(target,'_blank','noopener,noreferrer,width=680,height=620');shareOk('เปิดหน้าต่างแชร์แล้ว');}
+  if(target){trackEvent('fengshui_share_success',{type:channel+'_url'});window.open(target,'_blank','noopener,noreferrer,width=680,height=620');shareOk('เปิด LINE Share แล้ว ถ้าต้องการส่งเป็นภาพให้ใช้บนมือถือ หรือเปิดผ่าน LIFF ที่ตั้งค่าไว้');}
 }
 function wrapCanvasText(ctx,text,x,y,maxWidth,lineHeight,maxLines){
   var words=String(text||'').split(/\s+/), line='', lines=[];
@@ -1611,11 +1691,10 @@ function makeShareCanvas(){
 }
 function canvasBlob(canvas){return new Promise(function(resolve){canvas.toBlob(resolve,'image/png',.92);});}
 async function shareAsImage(){
-  var canvas=makeShareCanvas(), blob=await canvasBlob(canvas), file=new File([blob],'fengshui-result.png',{type:'image/png'});
+  var file=await makeShareFile();
   if(navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){try{await navigator.share({files:[file],title:'ผลตรวจฮวงจุ้ยบ้าน'}); trackEvent('fengshui_share_success',{type:'image'}); shareOk('แชร์ภาพสำเร็จแล้ว'); return;}catch(e){if(e.name==='AbortError')return;}}
   shareOk('เครื่องนี้ยังไม่รองรับแชร์ไฟล์ภาพตรงจากเว็บ ให้กด Facebook หรือ LINE แทน');
 }
-function shareImageTo(channel){trackEvent('fengshui_share_click',{target:channel});shareAsImage();}
 function downloadShareImage(){
   shareOk('ปิดการเซฟตรงแล้ว กรุณาแชร์จากปุ่มในระบบเพื่อบันทึกหลังแชร์สำเร็จ');
 }
@@ -1631,7 +1710,8 @@ async function initAppIntegrations(){
   try{
     var res=await fetch('/api/config',{cache:'no-store'});
     if(res.ok){APP_CONFIG=Object.assign(APP_CONFIG,await res.json());}
-    trackEvent('fengshui_config_loaded',{kv_ready:!!APP_CONFIG.kvReady});
+    trackEvent('fengshui_config_loaded',{kv_ready:!!APP_CONFIG.kvReady,line_liff:!!APP_CONFIG.lineLiffEnabled});
+    if(APP_CONFIG.lineLiffId && location.href.indexOf('liff.')>-1){ensureLiffReady();}
   }catch(e){console.log('Integration init skipped:',e.message);}
 }
 
@@ -1659,19 +1739,18 @@ initAppIntegrations();
   <div class="share-sheet" role="dialog" aria-modal="true" aria-label="แชร์ผลวิเคราะห์">
     <div class="share-sheet-head">
       <div>
-        <h3>แชร์ผลวิเคราะห์</h3>
-        <p>แชร์จากระบบก่อน แล้วค่อยบันทึกภาพจากแอปที่แชร์สำเร็จ เพื่อให้ผลลัพธ์ถูกเห็นต่อมากขึ้น</p>
+        <h3>แชร์การ์ดผลวิเคราะห์</h3>
+        <p>ระบบจะสร้างภาพสรุปคะแนน จุดเด่น จุดที่ควรระวัง และสิ่งที่ควรปรับ แล้วส่งเข้าหน้าต่างแชร์ของเครื่อง</p>
       </div>
       <button class="share-x" type="button" onclick="closeSharePanel()">×</button>
     </div>
     <div class="share-grid">
-      <button class="gold" type="button" onclick="shareAsImage()">สร้างการ์ดภาพจากระบบ</button>
       <button class="brand-fb" type="button" onclick="shareTo('facebook')">Facebook</button>
-      <button class="brand-ig" type="button" onclick="shareImageTo('instagram')">Instagram</button>
+      <button class="brand-ig" type="button" onclick="shareTo('instagram')">Instagram / Story</button>
       <button class="brand-line" type="button" onclick="shareTo('line')">LINE</button>
-      <button class="brand-tt" type="button" onclick="shareImageTo('tiktok')">TikTok</button>
+      <button class="brand-tt" type="button" onclick="shareTo('tiktok')">TikTok</button>
     </div>
-    <p class="share-note">IG/TikTok จะเปิดหน้าต่างแชร์ของเครื่อง ถ้าไม่เห็นแอป ให้เลือกบันทึกหรือแชร์ต่อจากแอปปลายทางหลังระบบสร้างภาพสำเร็จ</p>
+    <p class="share-note">ภาพจะส่งผ่าน native share เป็นหลัก บนคอมบางเครื่องอาจเห็นแค่บางแอป ส่วน LINE official share ใช้ได้เมื่อใส่ LINE_LIFF_ID และเปิดผ่าน LIFF</p>
     <p class="share-ok" id="share-status"></p>
   </div>
 </div>
