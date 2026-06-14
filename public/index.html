@@ -412,6 +412,10 @@ body.result-mode .float-actions{display:flex}
 .share-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}
 .share-grid button,.share-grid a{min-height:48px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.055);color:#fff;font-family:'Sarabun',sans-serif;font-size:13px;cursor:pointer;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;text-align:center}
 .share-grid .gold{grid-column:1/-1;background:linear-gradient(135deg,#a87b1d,#e7ca75,#a87b1d);color:#07111d;font-weight:700}
+.share-grid .brand-fb{background:rgba(24,119,242,.16);border-color:rgba(24,119,242,.35)}
+.share-grid .brand-ig{background:linear-gradient(135deg,rgba(245,133,41,.18),rgba(221,42,123,.16),rgba(81,91,212,.18));border-color:rgba(221,42,123,.38)}
+.share-grid .brand-line{background:rgba(6,199,85,.16);border-color:rgba(6,199,85,.35)}
+.share-grid .brand-tt{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.22)}
 .share-grid button:hover,.share-grid a:hover{border-color:rgba(201,168,76,.45);background:rgba(201,168,76,.1)}
 .share-note{font-size:11.5px;color:rgba(255,255,255,.45);line-height:1.55;margin-top:11px}
 .btn-restart{display:block;width:100%;margin-top:10px;background:none;border:.5px solid rgba(255,255,255,.15);color:rgba(255,255,255,.38);font-family:'Sarabun',sans-serif;font-size:12.5px;padding:10px;border-radius:9px;cursor:pointer;transition:all .2s;text-align:center}
@@ -521,8 +525,13 @@ html,body{background:var(--nv)}
 .fix-teaser p{font-size:16px;line-height:1.85}
 .fix-locked{background:#17202c;padding:16px 18px}
 .fix-locked-tag{font-size:12px;color:#F0DC9A;background:rgba(240,220,154,.12);border-color:rgba(240,220,154,.36)}
+.fix-zone-locked .fix-locked{background:#17202c!important;border-color:rgba(240,220,154,.18)!important}
+.fix-zone-locked .fix-locked:hover{background:#1a2430!important;border-color:rgba(240,220,154,.32)!important}
 .fix-note p{font-size:15.5px;color:var(--text)}
 .cta-title,.promo-title{color:var(--ink);font-size:18px;line-height:1.45}
+.promo-amount{font-size:24px;line-height:1.35}
+.promo-price{align-items:flex-start;flex-wrap:wrap}
+.promo-unit{line-height:1.6}
 .btn-cta-line,.btn-start,.btn-analyze,.btn-next{min-height:52px;border-radius:8px;font-family:'Sarabun',sans-serif;letter-spacing:.02em;font-size:15.5px}
 .btn-share,.btn-prev,.btn-restart{min-height:46px;border-radius:8px;font-size:15px}
 .sbody{max-width:680px}
@@ -1330,10 +1339,46 @@ function lockedTitle(title,index){
   if(t&&t!=='จุดที่ควรให้ซินแสดูต่อ') return t;
   return ['ตำแหน่งประตูหลัก','สีและวัสดุหน้าบ้าน','พื้นที่หลังประตูหลัก','ระดับพื้นและทางเดิน','ครัวและตำแหน่งเตา','ห้องนอนใหญ่กับผังบ้าน','ยังเหลือจุดที่ปรับเพิ่มได้'][index%7];
 }
+function isWeakAnalysisText(text){
+  var t=cleanText(text);
+  return !t || t.length<35 || /^(หน้าบ้าน|ภาพรวม|หน้าบ้านภาพรวม|ดี|ดีมาก|ควรดูเพิ่ม)$/.test(t);
+}
+function frontPartFallback(R){
+  if((R.score||0)>=80){
+    return 'จากภาพ หน้าบ้านมีความโปร่งและอ่านทางเข้าได้ค่อนข้างชัด ประตูหลัก ทางเดิน รั้ว พื้นหน้าบ้าน แสง และการจัดพื้นที่โดยรวมดูเป็นระเบียบ จึงถือว่าเป็นฐานพลังงานที่ดีของบ้าน จุดที่ควรตรวจเพิ่มไม่ใช่เพราะบ้านเสีย แต่เพื่อดูระดับพื้น ระยะรั้วกับประตู และสิ่งที่อาจบังทางเข้าจริงก่อนแนะนำจุดเสริมให้แม่นขึ้น';
+  }
+  if((R.score||0)>=65){
+    return 'จากภาพ หน้าบ้านยังมีพื้นฐานที่ใช้งานได้ แต่ควรดูทางเดินจากรั้วถึงประตูหลักให้ชัดขึ้น โดยเฉพาะรั้ว พื้นหน้าบ้าน แสง และของที่อยู่ใกล้ทางเข้า จุดเหล่านี้มีผลกับความรู้สึกก่อนเข้าบ้าน และควรเรียงลำดับการปรับจากของที่ทำเองได้ก่อน';
+  }
+  return 'จากภาพ หน้าบ้านควรตรวจตำแหน่งประตูหลัก ทางเดิน รั้ว พื้น และสิ่งที่บังทางเข้าให้ละเอียดก่อนสรุปวิธีแก้ เพราะจุดรับพลังงานแรกของบ้านมีผลกับการใช้งานและความรู้สึกของคนในบ้าน แนะนำให้เริ่มจากทำให้ทางเข้าดูโล่ง อ่านง่าย และปลอดสิ่งกีดขวางก่อน';
+}
+function specificLockedHint(title,hint,index){
+  var h=cleanText(hint);
+  var generic=/จุดนี้ให้ซินแสดูหน้างาน|ควรวิเคราะห์ร่วมกับพื้นที่จริง|เพื่อเช็กของจริงได้|ดูหน้างานเพื่อเช็กของจริง|ดูหน้างาน$/.test(h);
+  if(h && h.length>=28 && !generic) return h;
+  var t=cleanText(title);
+  if(/ประตู/.test(t)) return 'ดูแนวประตูหลักเทียบกับรั้ว ทางเดิน และทิศจริง เพื่อเลือกจุดเสริมให้ไม่ผิดตำแหน่ง';
+  if(/ระดับ|พื้น|ทางเดิน/.test(t)) return 'ตรวจระดับพื้นจริงเทียบกับถนนและแนวทางเดิน ว่าพลังงานไหลเข้าบ้านหรือถูกบีบตรงไหน';
+  if(/รั้ว|แนวทางเข้า/.test(t)) return 'ดูความโปร่งทึบของรั้ว ระยะเปิด และแนวสายตาจากหน้าบ้านถึงประตูหลัก';
+  if(/ต้นไม้|บังสายตา/.test(t)) return 'แยกว่าต้นไม้ช่วยบังแดดหรือเริ่มบังทางเข้า เพื่อปรับให้สวยและไม่กดพลังงาน';
+  if(/สี|วัสดุ/.test(t)) return 'เลือกสีและวัสดุให้เข้ากับทิศ แสง และภาพรวมหน้าบ้าน ไม่ให้หนักหรือเด่นผิดจุด';
+  if(/ตู้ไฟ|สายไฟ|ของหนัก/.test(t)) return 'ดูตำแหน่งของหนักและจุดระบบไฟ ว่าควรพราง ย้าย หรือจัดระเบียบโดยไม่กระทบการใช้งาน';
+  if(/มุมถ่าย|ภาพ/.test(t)) return 'ถ่ายมุมตรงและมุมเฉียงเพิ่ม เพื่อยืนยันตำแหน่งประตู ทางเดิน ระดับพื้น และสิ่งที่บังจริง';
+  return ['ดูรายละเอียดร่วมกับทิศและผังจริง เพื่อจัดลำดับจุดปรับให้คุ้มที่สุด','ตรวจหน้างานเพื่อแยกว่าควรเริ่มจากประตู พื้น รั้ว แสง หรือของที่บังทางเข้า','ใช้พื้นที่จริงช่วยยืนยันก่อนเลือกของเสริม จะได้ไม่แก้ผิดจุด'][index%3];
+}
 function freeFixTitle(title,index){
   var t=cleanText(title);
   if(t&&t!=='วิธีปรับแบบไม่ทุบ'&&t!=='วิธีปรับแบบไม่ทุบ ไม่รื้อ') return t;
   return ['เปิดทางเข้าหน้าบ้าน','จัดของสองข้างทางเข้า','เพิ่มแสงและความโปร่ง','ปรับจุดรกใกล้ประตู'][index%4];
+}
+function freeFixDesc(title,desc,index){
+  var d=cleanText(desc);
+  if(d.length>=45) return desc;
+  var t=cleanText(title);
+  if(/เปิด|ทางเข้า/.test(t)) return '• เก็บของที่อยู่ในแนวเดินออกก่อน • ให้มองเห็นทางจากหน้ารั้วถึงประตูหลักชัดขึ้น • เช็กว่าประตูเปิดใช้งานได้สะดวกและไม่ถูกของวางเบียด';
+  if(/สองข้าง|จัดของ/.test(t)) return '• จัดรองเท้า กระถาง หรือของใช้ให้เป็นกลุ่มเดียว • เว้นพื้นที่สองข้างทางเข้าให้เบาและเดินง่าย • ถ้ามีของจำเป็นให้เลือกตำแหน่งที่ไม่บังสายตาเข้าประตู';
+  if(/แสง|โปร่ง/.test(t)) return '• เปิดแสงหน้าบ้านให้พอดีช่วงเย็น • ตัดแต่งจุดที่บังแสงหรือทำให้หน้าบ้านดูทึบ • ใช้ไฟหรือของตกแต่งเล็ก ๆ เพื่อให้ทางเข้าดูชัดขึ้น';
+  return ['• เริ่มจากเก็บของที่ไม่จำเป็น • เปิดทางเดินให้เห็นประตูหลักชัด • ทำให้หน้าบ้านดูเบาและใช้งานง่ายขึ้น','• จัดของให้เป็นระเบียบ • แยกของจำเป็นกับของที่ทำให้รกสายตา • รักษาพื้นที่รับพลังงานแรกให้โล่ง'][index%2];
 }
 function scoreMeaning(score){
   if(score>=95) return 'ส่งเสริมเจ้าของได้เต็มศักยภาพ';
@@ -1360,6 +1405,8 @@ function normalizeResult(R){
   R.good=normalizeItems(R.good,3,'จุดเด่นของบ้าน');
   R.bad=normalizeItems(R.bad,5,'จุดที่ควรระวัง');
   R.frontPart=R.frontPart||{title:'หน้าบ้านภาพรวม',desc:'ประเมินจากภาพหน้าบ้านร่วมกับทิศและสภาพแวดล้อมที่เลือก'};
+  R.frontPart.title=cleanResultTitle(R.frontPart.title,'หน้าบ้านภาพรวม')||'หน้าบ้านภาพรวม';
+  if(isWeakAnalysisText(R.frontPart.desc)){R.frontPart.desc=frontPartFallback(R);}
   if(!R.good.length){R.good=[{title:'มีข้อมูลตั้งต้นเพียงพอสำหรับประเมินเบื้องต้น',desc:'ประเภทบ้าน ทิศหน้าบ้าน และสภาพแวดล้อมช่วยให้เห็นแนวทางพลังงานของบ้านได้ชัดขึ้น'}];}
   if(!R.bad.length){R.bad=[{title:'ยังควรตรวจภาพหน้าบ้านอย่างละเอียด',desc:'หากภาพไม่เห็นประตู ทางเดิน และสิ่งกีดขวางครบ การประเมินบางจุดอาจต้องดูพื้นที่จริงเพิ่มเติม'}];}
   R.fixFree=Array.isArray(R.fixFree)?R.fixFree:(R.fixFree?[R.fixFree]:null);
@@ -1375,7 +1422,7 @@ function normalizeResult(R){
       ];
     }
   }
-  R.fixFree=R.fixFree.slice(0,2).map(function(it,i){return {title:freeFixTitle(it.title,i),desc:it.desc||it.hint||''};});
+  R.fixFree=R.fixFree.slice(0,2).map(function(it,i){var title=freeFixTitle(it.title,i);return {title:title,desc:freeFixDesc(title,it.desc||it.hint||'',i)};});
   R.fixLocked=Array.isArray(R.fixLocked)?R.fixLocked:normalizeItems((R.fix||[]).slice(2),8).map(function(it,i){return {title:lockedTitle(it.title,i),hint:it.desc||'ควรวิเคราะห์ร่วมกับพื้นที่จริง'};});
   var lockFallback=[
     {title:'ตำแหน่งประตูหลักกับทิศบ้าน',hint:'ควรดูหน้างานเพื่อจัดลำดับการปรับให้ตรงจุด'},
@@ -1386,7 +1433,7 @@ function normalizeResult(R){
     {title:'ยังเหลือจุดที่ปรับเพิ่มได้',hint:'รั้ว ประตู สี แสง ต้นไม้ และตำแหน่งของหน้าบ้านอาจเปลี่ยนลำดับการแก้ได้'}
   ];
   while(R.fixLocked.length<5){R.fixLocked.push(lockFallback[R.fixLocked.length%lockFallback.length]);}
-  R.fixLocked=R.fixLocked.slice(0,6).map(function(it,i){return {title:lockedTitle(it.title,i),hint:it.hint||it.desc||'ควรวิเคราะห์ร่วมกับพื้นที่จริง'};});
+  R.fixLocked=R.fixLocked.slice(0,6).map(function(it,i){var title=lockedTitle(it.title,i);return {title:title,hint:specificLockedHint(title,it.hint||it.desc,i)};});
   R.omen=cleanText(R.omen)||'บ้านหลังนี้ยังมีศักยภาพในการปรับพลังงานให้ดีขึ้น โดยควรเริ่มจากหน้าบ้าน ประตูหลัก และทางเดินเข้าเป็นอันดับแรก';
   R.needsExpert=!!R.needsExpert;
   return R;
@@ -1479,7 +1526,6 @@ function openSharePanel(){
 function closeSharePanel(){var panel=document.getElementById('share-panel'); if(panel) panel.classList.remove('show');}
 function shareOk(msg){['sm-high','sm-mid','share-status'].forEach(function(id){var e=document.getElementById(id);if(e){e.textContent=msg||'พร้อมแชร์แล้ว';setTimeout(function(){e.textContent=''},3500);}});}
 function doShare(){openSharePanel();}
-function copyShareText(){clip(shareText(),function(){shareOk('คัดลอกข้อความแล้ว');});}
 function shareTo(channel){
   var text=encodeURIComponent(shareText());
   var url=encodeURIComponent(location.href);
@@ -1496,29 +1542,80 @@ function wrapCanvasText(ctx,text,x,y,maxWidth,lineHeight,maxLines){
   lines.forEach(function(l,i){ctx.fillText(l,x,y+i*lineHeight);});
   return y+lines.length*lineHeight;
 }
+function plainText(value){return cleanText(String(value||'').replace(/<[^>]+>/g,'').replace(/[•]/g,' '));}
+function firstResultItem(list,fallback){
+  var item=(Array.isArray(list)&&list.length)?list[0]:null;
+  if(!item) return fallback;
+  return {
+    title:cleanText(item.title)||fallback.title,
+    desc:plainText(item.desc||item.hint||fallback.desc)
+  };
+}
+function drawCardBox(ctx,x,y,w,h,title,body,color){
+  ctx.save();
+  ctx.fillStyle='rgba(255,255,255,.055)';
+  ctx.strokeStyle=color;
+  ctx.lineWidth=3;
+  roundRect(ctx,x,y,w,h,18);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle=color;
+  ctx.font='700 28px Sarabun, sans-serif';
+  ctx.fillText(title,x+28,y+44);
+  ctx.fillStyle='rgba(255,255,255,.9)';
+  ctx.font='700 30px Sarabun, sans-serif';
+  var next=wrapCanvasText(ctx,body.title,x+28,y+88,w-56,38,2);
+  ctx.fillStyle='rgba(255,255,255,.72)';
+  ctx.font='25px Sarabun, sans-serif';
+  wrapCanvasText(ctx,body.desc,x+28,next+18,w-56,34,3);
+  ctx.restore();
+}
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y);
+  ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);
+  ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);
+  ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);
+  ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath();
+}
 function makeShareCanvas(){
   var c=document.createElement('canvas'), ctx=c.getContext('2d');
   c.width=1080; c.height=1350;
-  var g=ctx.createLinearGradient(0,0,0,c.height); g.addColorStop(0,'#07111d'); g.addColorStop(1,'#111821'); ctx.fillStyle=g; ctx.fillRect(0,0,c.width,c.height);
-  ctx.strokeStyle='rgba(201,168,76,.55)'; ctx.lineWidth=3; ctx.strokeRect(42,42,996,1266);
-  ctx.fillStyle='#d9b85f'; ctx.font='700 34px Sarabun, sans-serif'; ctx.fillText('ผลตรวจฮวงจุ้ยบ้าน · ซินแสแบงค์',70,115);
-  ctx.fillStyle='#fff'; ctx.font='700 62px Sarabun, sans-serif'; wrapCanvasText(ctx,document.getElementById('r-headline').textContent,70,195,900,78,2);
-  ctx.beginPath(); ctx.arc(185,390,92,0,Math.PI*2); ctx.strokeStyle='#d9b85f'; ctx.lineWidth=14; ctx.stroke(); ctx.fillStyle='#d9b85f'; ctx.font='700 64px Sarabun, sans-serif'; ctx.textAlign='center'; ctx.fillText((document.getElementById('r-score')||{}).textContent||'',185,413); ctx.textAlign='left';
-  ctx.fillStyle='rgba(255,255,255,.78)'; ctx.font='700 30px Sarabun, sans-serif'; ctx.fillText((document.getElementById('r-slbl')||{}).textContent||'',305,360);
-  ctx.fillStyle='rgba(255,255,255,.55)'; ctx.font='24px Sarabun, sans-serif'; ctx.fillText('วิเคราะห์คะแนนฮวงจุ้ยบ้าน จาก 100 คะแนน',305,400);
-  ctx.fillStyle='rgba(255,255,255,.88)'; ctx.font='700 30px Sarabun, sans-serif'; ctx.fillText('ภาพรวมฮวงจุ้ยบ้านหลังนี้',70,560);
-  ctx.fillStyle='rgba(255,255,255,.76)'; ctx.font='27px Sarabun, sans-serif'; var next=wrapCanvasText(ctx,document.getElementById('r-score-omen').textContent,70,615,900,44,8);
-  ctx.fillStyle='rgba(255,255,255,.55)'; ctx.font='22px Sarabun, sans-serif'; wrapCanvasText(ctx,'วิเคราะห์จากข้อมูลและภาพที่ได้รับ อาจคลาดเคลื่อนได้ เพราะยังไม่ได้ไปดูหน้างานจริง',70,next+55,900,36,3);
-  ctx.fillStyle='#d9b85f'; ctx.font='700 30px Sarabun, sans-serif'; ctx.fillText('ปรึกษาซินแสแบงค์ผ่าน LINE',70,1195);
-  ctx.fillStyle='rgba(255,255,255,.8)'; ctx.font='26px Sarabun, sans-serif'; ctx.fillText('https://lin.ee/qLCFQpj',70,1240);
+  var R=CURRENT_RESULT||{};
+  var score=String((document.getElementById('r-score')||{}).textContent||R.score||'-');
+  var label=(document.getElementById('r-slbl')||{}).textContent||R.scoreLabel||'';
+  var headline=(document.getElementById('r-headline')||{}).textContent||R.headline||'ผลตรวจฮวงจุ้ยหน้าบ้าน';
+  var good=firstResultItem(R.good,{title:'หน้าบ้านมีจุดส่งเสริม',desc:'มีพื้นที่ให้จัดทางเข้าให้โปร่งและเห็นประตูหลักชัดขึ้น'});
+  var bad=firstResultItem(R.bad,{title:'จุดที่ควรระวัง',desc:'ควรดูสิ่งที่บังทางเข้า ระดับพื้น และความชัดของประตูหลัก'});
+  var fix=firstResultItem(R.fixFree,{title:'เปิดทางเข้าหน้าบ้าน',desc:'จัดของที่บังทางเดินออกก่อน แล้วทำให้ทางเข้ามองเห็นง่ายขึ้น'});
+  var g=ctx.createLinearGradient(0,0,0,c.height); g.addColorStop(0,'#07111d'); g.addColorStop(.55,'#111b27'); g.addColorStop(1,'#080f1e'); ctx.fillStyle=g; ctx.fillRect(0,0,c.width,c.height);
+  ctx.strokeStyle='rgba(201,168,76,.55)'; ctx.lineWidth=4; roundRect(ctx,42,42,996,1266,22); ctx.stroke();
+  ctx.fillStyle='#d9b85f'; ctx.font='700 28px Sarabun, sans-serif'; ctx.fillText('ผลตรวจฮวงจุ้ยหน้าบ้าน · ซินแสแบงค์',70,112);
+  ctx.fillStyle='#fff'; ctx.font='700 58px Sarabun, sans-serif'; wrapCanvasText(ctx,headline,70,178,900,70,2);
+  ctx.beginPath(); ctx.arc(210,388,104,0,Math.PI*2); ctx.strokeStyle='rgba(201,168,76,.28)'; ctx.lineWidth=20; ctx.stroke();
+  ctx.beginPath(); ctx.arc(210,388,104,-Math.PI/2,-Math.PI/2+(Math.PI*2*(Number(score)||0)/100)); ctx.strokeStyle='#d9b85f'; ctx.lineWidth=20; ctx.lineCap='round'; ctx.stroke();
+  ctx.fillStyle='#d9b85f'; ctx.font='700 78px Sarabun, sans-serif'; ctx.textAlign='center'; ctx.fillText(score,210,412); ctx.font='700 24px Sarabun, sans-serif'; ctx.fillText('/100',210,452); ctx.textAlign='left';
+  ctx.fillStyle='rgba(255,255,255,.92)'; ctx.font='700 40px Sarabun, sans-serif'; ctx.fillText(label||'คะแนนหน้าบ้าน',355,360);
+  ctx.fillStyle='rgba(255,255,255,.65)'; ctx.font='27px Sarabun, sans-serif'; wrapCanvasText(ctx,'สรุปจากภาพหน้าบ้านจริง: ประตู ทางเดิน รั้ว แสง และสิ่งที่บังทางเข้า',355,405,600,40,3);
+  drawCardBox(ctx,70,545,940,195,'จุดเด่น',good,'#49D19A');
+  drawCardBox(ctx,70,770,940,195,'จุดที่ควรระวัง',bad,'#FF6D70');
+  drawCardBox(ctx,70,995,940,180,'ควรเริ่มปรับ',fix,'#F0DC9A');
+  ctx.fillStyle='rgba(255,255,255,.5)'; ctx.font='22px Sarabun, sans-serif'; wrapCanvasText(ctx,'ผลนี้เป็นการประเมินเบื้องต้นจากภาพ ควรให้ซินแสดูพื้นที่จริงก่อนแก้จุดสำคัญ',70,1225,900,32,2);
+  ctx.fillStyle='#d9b85f'; ctx.font='700 28px Sarabun, sans-serif'; ctx.fillText('ทัก LINE เพื่อส่งรูปเพิ่ม: lin.ee/qLCFQpj',70,1288);
   return c;
 }
 function canvasBlob(canvas){return new Promise(function(resolve){canvas.toBlob(resolve,'image/png',.92);});}
 async function shareAsImage(){
   var canvas=makeShareCanvas(), blob=await canvasBlob(canvas), file=new File([blob],'fengshui-result.png',{type:'image/png'});
   if(navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){try{await navigator.share({files:[file],title:'ผลตรวจฮวงจุ้ยบ้าน'}); trackEvent('fengshui_share_success',{type:'image'}); shareOk('แชร์ภาพสำเร็จแล้ว'); return;}catch(e){if(e.name==='AbortError')return;}}
-  shareOk('เครื่องนี้ยังไม่รองรับแชร์ภาพตรงจากเว็บ ให้แชร์ผ่าน LINE หรือ Facebook จากปุ่มด้านล่างก่อนนะครับ');
+  shareOk('เครื่องนี้ยังไม่รองรับแชร์ไฟล์ภาพตรงจากเว็บ ให้กด Facebook หรือ LINE แทน');
 }
+function shareImageTo(channel){trackEvent('fengshui_share_click',{target:channel});shareAsImage();}
 function downloadShareImage(){
   shareOk('ปิดการเซฟตรงแล้ว กรุณาแชร์จากปุ่มในระบบเพื่อบันทึกหลังแชร์สำเร็จ');
 }
@@ -1568,13 +1665,13 @@ initAppIntegrations();
       <button class="share-x" type="button" onclick="closeSharePanel()">×</button>
     </div>
     <div class="share-grid">
-      <button class="gold" type="button" onclick="shareAsImage()">แชร์เป็นภาพจากระบบ</button>
-      <button type="button" onclick="shareTo('facebook')">Facebook</button>
-      <button type="button" onclick="shareTo('line')">LINE</button>
-      <button type="button" onclick="shareAsImage()">IG/Story: แชร์ภาพก่อน</button>
-      <button type="button" onclick="copyShareText()">คัดลอกข้อความ</button>
+      <button class="gold" type="button" onclick="shareAsImage()">สร้างการ์ดภาพจากระบบ</button>
+      <button class="brand-fb" type="button" onclick="shareTo('facebook')">Facebook</button>
+      <button class="brand-ig" type="button" onclick="shareImageTo('instagram')">Instagram</button>
+      <button class="brand-line" type="button" onclick="shareTo('line')">LINE</button>
+      <button class="brand-tt" type="button" onclick="shareImageTo('tiktok')">TikTok</button>
     </div>
-    <p class="share-note">ระบบปิดการเซฟรูปตรง ต้องแชร์จากปุ่มนี้ก่อน หากต้องการบันทึกภาพ ให้บันทึกจากแอปปลายทางหลังแชร์สำเร็จ</p>
+    <p class="share-note">IG/TikTok จะเปิดหน้าต่างแชร์ของเครื่อง ถ้าไม่เห็นแอป ให้เลือกบันทึกหรือแชร์ต่อจากแอปปลายทางหลังระบบสร้างภาพสำเร็จ</p>
     <p class="share-ok" id="share-status"></p>
   </div>
 </div>
