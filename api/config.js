@@ -7,9 +7,6 @@ export default async function handler(req, res) {
   return res.status(200).json({
     ok: true,
     lineUrl: 'https://lin.ee/qLCFQpj',
-    liffId: process.env.LINE_LIFF_ID || process.env.LIFF_ID || '',
-    liffReady: Boolean(process.env.LINE_LIFF_ID || process.env.LIFF_ID),
-    kvReady: Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN),
-    followupReady: true
+    kvReady: Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
   });
 }
