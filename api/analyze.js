@@ -1,5 +1,5 @@
 // api/analyze.js — Vercel Serverless Function
-// วิเคราะห์ฮวงจุ้ยจากภาพและข้อมูลบ้าน โดยใช้ Anthropic API · build 2026-06-08-insight-engine-v1
+// วิเคราะห์ฮวงจุ้ยจากภาพและข้อมูลบ้าน โดยใช้ Gemini API · build 2026-06-14-gemini-front-only-v1
 
 export const config = {
   maxDuration: 60,
@@ -227,11 +227,11 @@ const evidenceTool = {
 };
 
 export default async function handler(req, res) {
-  // CORS headers — allow any origin (เพื่อให้ claude.ai artifact และ domain จริงเรียกได้)
+  // CORS headers — allow any origin for the public web app
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.setHeader('X-Fengshui-Api-Version', '2026-06-10-front-only-v1');
+  res.setHeader('X-Fengshui-Api-Version', '2026-06-14-gemini-front-only-v1');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -320,9 +320,10 @@ export default async function handler(req, res) {
     return res.status(429).json({ error: 'ส่งคำขอบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่', retryAfter });
   }
 
-  const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-  if (!ANTHROPIC_API_KEY) {
-    return res.status(500).json({ error: 'API key not configured' });
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
+  if (!GEMINI_API_KEY) {
+    return res.status(500).json({ error: 'Gemini API key not configured' });
   }
 
   const userText = `ข้อมูลบ้านที่ผู้ใช้ให้มา:
@@ -338,31 +339,64 @@ export default async function handler(req, res) {
 ถ้าภาพหน้าบ้านเห็นรายละเอียด เช่น ประตู ทางเดิน รั้ว พื้น ชาน ทางลาด ของวาง ตู้ไฟ สายไฟ หลังคา ความทึบ ความโปร่ง ให้ดึงสิ่งนั้นมาเขียนโดยตรง ห้ามตอบแบบกว้างๆ
 ห้ามพูดถึงภายในบ้านในผลหลัก หากต้องใส่ช่อง interiorPart ให้ระบุเพียงว่ารอบนี้โฟกัสหน้าบ้านเท่านั้น`;
 
+  const jsonInstructions = `ตอบกลับเป็น JSON object เท่านั้น ห้ามมี markdown ห้ามมีคำอธิบายนอก JSON
+
+schema ที่ต้องใช้:
+{
+  "score": 0,
+  "headline": "",
+  "scoreLabel": "",
+  "typeCheck": "",
+  "frontPart": "",
+  "interiorPart": "",
+  "observationsText": "",
+  "goodText": "",
+  "badText": "",
+  "fixText": "",
+  "omen": "",
+  "needsExpert": true
+}
+
+กติกาการเขียน:
+- observationsText ใส่ 5-6 ข้อ คั่นด้วย | แต่ละข้อเป็น "หัวข้อ: รายละเอียด"
+- goodText ใส่ 3 ข้อ คั่นด้วย |
+- badText ใส่ 4 ข้อ คั่นด้วย |
+- fixText ใส่ 7-8 ข้อ คั่นด้วย | ข้อ 1-2 เป็นสิ่งที่ทำเองได้ทันที ข้อถัดไปเป็นจุดที่ควรให้ซินแสดูหน้างาน
+- รายละเอียดแต่ละข้อใช้ bullet สั้น ๆ ด้วยเครื่องหมาย • 2-4 bullet
+- ห้ามใส่เลขลำดับในหัวข้อ เช่น "จุดเด่น 1" หรือ "สิ่งที่เห็นจากภาพ 1"
+- ห้ามใช้คำว่า AI ในคำตอบ
+- ถ้าต้องตรวจเพิ่ม ให้เขียนว่า "จุดนี้ให้ซินแสดูหน้างานเพื่อเช็กของจริงได้"
+- ถ้าภาพหน้าบ้านดูดีจริง ให้ให้คะแนนสูงตามสมควร ไม่สร้างปัญหาเกินจริง`;
+
   let timeout;
   try {
     const controller = new AbortController();
     timeout = setTimeout(() => controller.abort(), 56000);
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
+        'Content-Type': 'application/json'
       },
       signal: controller.signal,
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 4200,
-        system: frontOnlySystemPrompt + '\n\nกติกาเพิ่มเติม: วิเคราะห์จากภาพหน้าบ้านจริงในคำขอนี้โดยตรง อย่าตอบว่าระบบอ่านภาพไม่ได้ถ้าภาพยังมองเห็นบ้านได้ชัด ถ้าบ้านดูดีให้พูดว่าดีและให้คะแนนสูงตามสมควร ไม่ต้องพยายามหาปัญหาเกินจริง เขียนแบบมือโปร ตรง ใช้งานได้จริง ไม่อวยเกินจริง ไม่ขายแข็ง ทุกข้อสำคัญต้องอ้างสิ่งที่เห็นในภาพก่อนเสมอ',
-        tools: [analysisTool],
-        tool_choice: { type: 'tool', name: 'submit_fengshui_analysis' },
-        messages: [{
+        systemInstruction: {
+          parts: [{
+            text: frontOnlySystemPrompt + '\n\nกติกาเพิ่มเติม: วิเคราะห์จากภาพหน้าบ้านจริงในคำขอนี้โดยตรง อย่าตอบว่าระบบอ่านภาพไม่ได้ถ้าภาพยังมองเห็นบ้านได้ชัด ถ้าบ้านดูดีให้พูดว่าดีและให้คะแนนสูงตามสมควร ไม่ต้องพยายามหาปัญหาเกินจริง เขียนแบบมือโปร ตรง ใช้งานได้จริง ไม่อวยเกินจริง ไม่ขายแข็ง ทุกข้อสำคัญต้องอ้างสิ่งที่เห็นในภาพก่อนเสมอ'
+          }]
+        },
+        generationConfig: {
+          temperature: 0.25,
+          topP: 0.9,
+          maxOutputTokens: 2600,
+          responseMimeType: 'application/json'
+        },
+        contents: [{
           role: 'user',
-          content: [
-            { type: 'text', text: 'ภาพนี้คือภาพหน้าบ้านจริง ให้ตรวจจากภาพโดยตรง: ประตูหลักเด่นไหม ทางเดินจากรั้วถึงประตูเปิดโล่งไหม พื้นหน้าบ้านเรียบร้อยไหม รั้วและเสาเบียดทางเข้าไหม ต้นไม้ รถ ของวาง ตู้ไฟ สายไฟ หรือของหนักบังสายตาไหม แสงและความโปร่งโดยรวมเป็นอย่างไร ถ้าบ้านดูดีให้ประเมินว่าดี ไม่ต้องสร้างปัญหาเกินจริง' },
-            { type: 'image', source: { type: 'base64', media_type: photoMime || 'image/jpeg', data: photoB64 } },
-            { type: 'text', text: `${userText}
+          parts: [
+            { text: 'ภาพนี้คือภาพหน้าบ้านจริง ให้ตรวจจากภาพโดยตรง: ประตูหลักเด่นไหม ทางเดินจากรั้วถึงประตูเปิดโล่งไหม พื้นหน้าบ้านเรียบร้อยไหม รั้วและเสาเบียดทางเข้าไหม ต้นไม้ รถ ของวาง ตู้ไฟ สายไฟ หรือของหนักบังสายตาไหม แสงและความโปร่งโดยรวมเป็นอย่างไร ถ้าบ้านดูดีให้ประเมินว่าดี ไม่ต้องสร้างปัญหาเกินจริง' },
+            { inlineData: { mimeType: photoMime || 'image/jpeg', data: photoB64 } },
+            { text: `${userText}
 
 ให้เขียนผลวิเคราะห์หน้าบ้านเท่านั้น ห้ามวิเคราะห์ภายในบ้าน ห้ามพูดเหมือนเห็นพื้นที่ที่ภาพไม่ได้แสดง
 
@@ -371,7 +405,9 @@ export default async function handler(req, res) {
 - ถ้าบ้านโดยรวมดีแต่มีรถ ต้นไม้ รั้ว หรือของวางบางจุดบังสายตาเล็กน้อย ให้คะแนน 76-88
 - ถ้าทางเข้าไม่ชัด ทึบ รก หรือประตูหลักถูกบังจริง ให้ค่อยลดลง 45-68
 
-เป้าหมายธุรกิจ: CTA ต้องพาคนส่งรูปเพิ่มหรือคุยต่อด้วยเหตุผลเฉพาะ เช่น ต้องดูมุมประตู/ระดับพื้น/รั้วเพิ่ม ไม่ใช่บอกว่าอ่านภาพไม่ได้` }
+เป้าหมายธุรกิจ: CTA ต้องพาคนส่งรูปเพิ่มหรือคุยต่อด้วยเหตุผลเฉพาะ เช่น ต้องดูมุมประตู/ระดับพื้น/รั้วเพิ่ม ไม่ใช่บอกว่าอ่านภาพไม่ได้
+
+${jsonInstructions}` }
           ]
         }]
       })
@@ -379,21 +415,23 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       const err = await response.text();
-      console.error('Anthropic analysis error:', err);
+      console.error('Gemini analysis error:', err);
       return res.status(502).json({ error: 'Upstream API error', detail: err });
     }
 
     const data = await response.json();
-    const toolUse = (data.content || []).find(i => i.type === 'tool_use' && i.name === 'submit_fengshui_analysis');
-    const raw = (data.content || []).map(i => i.text || '').join('');
+    const raw = (data.candidates || [])
+      .flatMap(candidate => candidate?.content?.parts || [])
+      .map(part => part.text || '')
+      .join('')
+      .trim();
 
     let parsed;
-    let via = 'tool';
+    let via = 'gemini_json';
     try {
-      parsed = toolUse?.input || extractJson(raw);
-      if (!toolUse?.input) via = 'text';
+      parsed = extractJson(raw);
     } catch (parseErr) {
-      console.error('Invalid structured analysis:', raw.slice(0, 1800), JSON.stringify(data.content || []).slice(0, 1800));
+      console.error('Invalid structured analysis:', raw.slice(0, 1800), JSON.stringify(data.candidates || []).slice(0, 1800));
       return res.status(502).json({ error: 'Invalid structured analysis', detail: parseErr.message });
     }
 
