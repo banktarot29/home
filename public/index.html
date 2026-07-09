@@ -1070,9 +1070,7 @@ function pickOmen(sel,ckScore,score){
 
 function buildResult(sel){
   var risk=0;
-  if(['บ้านต่ำกว่าพื้นถนน','ใกล้หม้อแปลงไฟฟ้า','ใกล้สะพาน/ทางด่วน','ริมถนนใหญ่','ใกล้ตลาด'].indexOf(sel.env)>=0) risk+=10;
-  if(['ใกล้วัด','ใกล้รถไฟ/BTS/MRT'].indexOf(sel.env)>=0) risk+=6;
-  if(['ออฟฟิศ','โรงงาน'].indexOf(sel.type)>=0 || ['ร้านค้า','สำนักงาน','โรงงาน','Home Office'].indexOf(sel.usage)>=0) risk+=4;
+  if(['ออฟฟิศ','โรงงาน'].indexOf(sel.type)>=0) risk+=4;
   var base=64-risk;
   if(['ทิศตะวันออก','ทิศตะวันออกเฉียงใต้','ทิศใต้'].indexOf(sel.dir)>=0) base+=3;
   var score=Math.min(74,Math.max(38,Math.round(base)));
@@ -1080,7 +1078,7 @@ function buildResult(sel){
   return{
     score:score,needsExpert:needsExpert,
     observations:[
-      {title:'ภาพรวมจากข้อมูลที่เลือก',desc:'บ้านประเภท '+sel.type+' ใช้งานแบบ '+(sel.usage||'ไม่ได้ระบุ')+' หันออก '+sel.dir+' อยู่ในสภาพแวดล้อม '+sel.env+' และปัญหาที่แจ้งคือ '+((sel.pain||[]).join(', ')||'ไม่มีปัญหาชัดเจน')+' จึงควรเริ่มจากการจัดหน้าบ้านให้ทางเข้าอ่านง่ายและใช้งานสะดวกก่อน'},
+      {title:'ภาพรวมจากข้อมูลที่เลือก',desc:'บ้านประเภท '+sel.type+' หันออก '+sel.dir+' และปัญหาที่แจ้งคือ '+((sel.pain||[]).join(', ')||'ไม่มีปัญหาชัดเจน')+' จึงควรเริ่มจากการจัดหน้าบ้านให้ทางเข้าอ่านง่ายและใช้งานสะดวกก่อน'},
       {title:'ตรวจรูปแบบที่อยู่อาศัย',desc:'รอบนี้ยังอ่านภาพแบบละเอียดไม่สำเร็จ จึงยืนยันจากภาพไม่ได้ว่ารูปแบบที่เลือกตรงกับบ้านจริงหรือไม่ ควรลองใหม่ด้วยภาพหน้าบ้านที่ชัดขึ้น'},
       {title:'จุดที่ควรดูจากหน้าบ้าน',desc:'ให้ดูว่าทางเดินเข้าบ้านเปิดโล่งไหม ประตูหลักมองเห็นชัดหรือเปล่า และมีของวางบีบทางเข้าจนทำให้หน้าบ้านดูอึดอัดหรือไม่'},
       {title:'ข้อจำกัดของการวิเคราะห์',desc:'หากภาพเห็นหน้าบ้านหรือภายในบ้านไม่ครบ รายงานนี้จะเป็นการประเมินเบื้องต้นและควรตรวจพื้นที่จริงเพิ่มเติม'}],
@@ -1272,7 +1270,7 @@ function archetypeTagsFallback(score){
 function renderResult(R){
   R=normalizeResult(R);
   document.getElementById('r-headline').textContent=R.headline;
-  var rhlsub=document.getElementById('r-headline-sub');if(rhlsub){var _p=[];if(window._houseType)_p.push(window._houseType);if(window._facing)_p.push('ทิศ'+window._facing);rhlsub.textContent=_p.join(' · ');rhlsub.style.display=_p.length?'block':'none';}
+  var rhlsub=document.getElementById('r-headline-sub');if(rhlsub){var _p=[];if(window._houseType)_p.push(window._houseType);if(window._facing)_p.push(window._facing);rhlsub.textContent=_p.join(' · ');rhlsub.style.display=_p.length?'block':'none';}
   document.getElementById('r-score').textContent=R.score;
   document.getElementById('r-slbl').textContent=R.scoreLabel;
   var arT=document.getElementById('r-archetype'),arD=document.getElementById('r-archetype-desc'),arTags=document.getElementById('r-archetype-tags'),arSec=document.getElementById('sec-archetype');
