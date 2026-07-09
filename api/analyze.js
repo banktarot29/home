@@ -293,9 +293,10 @@ export default async function handler(req, res) {
 ให้ผูกผลวิเคราะห์กับปัญหาที่เจ้าของบ้านเลือก เช่น เงินเก็บไม่อยู่ งานติดขัด คนในบ้านเครียด บ้านรกง่าย หรือไม่อยากกลับบ้าน โดยใช้คำว่า อาจ, มักพบร่วมกับ, มีแนวโน้ม เมื่อยังไม่สามารถยืนยันจากภาพได้
 ถ้าภาพหน้าบ้านเห็นรายละเอียด เช่น ประตู ทางเดิน รั้ว พื้น ชาน ทางลาด ของวาง ตู้ไฟ สายไฟ หลังคา ความทึบ ความโปร่ง ให้ดึงสิ่งนั้นมาเขียนโดยตรง ห้ามตอบแบบกว้างๆ`;
 
+  let timeout;
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 54000);
+    timeout = setTimeout(() => controller.abort(), 54000);
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -305,8 +306,9 @@ export default async function handler(req, res) {
       },
       signal: controller.signal,
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 2200,
+        model: 'claude-sonnet-5',
+        max_tokens: 3200,
+        thinking: { type: 'disabled' },
         system: compactSystemPrompt,
         tools: [analysisTool],
         tool_choice: { type: 'tool', name: 'submit_fengshui_analysis' },
