@@ -1,9 +1,11 @@
-// api/og.js - Open Graph image generator
-// Uses Vercel's @vercel/og on Edge Runtime, with a static SVG fallback.
+// api/og.js — Open Graph image generator
+// Uses Vercel's built-in @vercel/og (Edge Runtime, no extra install needed on Vercel)
+// Falls back to SVG redirect if not available
 
 export const config = { runtime: 'edge' };
 
-export default async function handler() {
+export default async function handler(req) {
+  // Try to use @vercel/og if available
   try {
     const { ImageResponse } = await import('@vercel/og');
 
@@ -23,93 +25,69 @@ export default async function handler() {
             position: 'relative',
           },
           children: [
+            // Gold border frame
             {
               type: 'div',
               props: {
                 style: {
-                  position: 'absolute',
-                  top: '28px',
-                  left: '28px',
-                  right: '28px',
-                  bottom: '28px',
+                  position: 'absolute', top: '28px', left: '28px', right: '28px', bottom: '28px',
                   border: '1.5px solid rgba(201,168,76,0.4)',
                   borderRadius: '6px',
                 },
               },
             },
+            // Badge
             {
               type: 'div',
               props: {
-                style: {
-                  fontSize: '14px',
-                  color: 'rgba(201,168,76,0.78)',
-                  letterSpacing: '4px',
-                  marginBottom: '24px',
-                },
-                children: 'Sinsa Bank · Feng Shui Check',
+                style: { fontSize: '14px', color: 'rgba(201,168,76,0.75)', letterSpacing: '4px', marginBottom: '24px' },
+                children: '✦  ซินแสแบงค์  ·  FENG SHUI INSIGHT',
+              },
+            },
+            // Headline
+            {
+              type: 'div',
+              props: {
+                style: { fontSize: '72px', fontWeight: '700', color: '#ffffff', lineHeight: 1.1, marginBottom: '8px' },
+                children: 'วิเคราะห์ฮวงจุ้ย',
               },
             },
             {
               type: 'div',
               props: {
-                style: {
-                  fontSize: '72px',
-                  fontWeight: '700',
-                  color: '#ffffff',
-                  lineHeight: 1.1,
-                  marginBottom: '8px',
-                },
-                children: 'ตรวจฮวงจุ้ย',
+                style: { fontSize: '72px', fontWeight: '700', color: '#ffffff', lineHeight: 1.1, marginBottom: '20px' },
+                children: 'บ้านคุณฟรี',
               },
             },
+            // Gold underline
             {
               type: 'div',
               props: {
                 style: {
-                  fontSize: '72px',
-                  fontWeight: '700',
-                  color: '#ffffff',
-                  lineHeight: 1.1,
-                  marginBottom: '20px',
-                },
-                children: 'หน้าบ้านฟรี',
-              },
-            },
-            {
-              type: 'div',
-              props: {
-                style: {
-                  width: '420px',
-                  height: '3px',
-                  borderRadius: '2px',
-                  marginBottom: '32px',
+                  width: '420px', height: '3px', borderRadius: '2px', marginBottom: '32px',
                   background: 'linear-gradient(90deg, #8B6914, #C9A84C, #F0DC9A)',
                 },
               },
             },
+            // Sub text
             {
               type: 'div',
               props: {
-                style: {
-                  fontSize: '24px',
-                  color: 'rgba(255,255,255,0.68)',
-                  lineHeight: 1.6,
-                },
-                children: 'อัปโหลดภาพหน้าบ้าน · อ่านทางเข้า ประตู รั้ว และแสง · บอกจุดที่ควรเริ่มปรับ',
+                style: { fontSize: '24px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.6 },
+                children: 'อัปโหลดภาพบ้าน · อ่านภาพจริงทันที · บอกวิธีปรับแบบไม่ทุบ ไม่รื้อ',
               },
             },
+            // Pills row
             {
               type: 'div',
               props: {
                 style: { display: 'flex', gap: '12px', marginTop: '36px' },
-                children: ['อ่านจากภาพจริง', 'ผลเฉพาะบ้านคุณ', 'ใช้เวลาประมาณ 30-60 วินาที'].map(label => ({
+                children: ['🏠 อ่านจากภาพจริง', '🔮 ผลเฉพาะบ้านคุณ', '⚡ ผลใน 30 วินาที'].map(label => ({
                   type: 'div',
                   props: {
                     style: {
-                      padding: '10px 20px',
-                      borderRadius: '24px',
-                      fontSize: '15px',
-                      color: 'rgba(201,168,76,0.92)',
+                      padding: '10px 20px', borderRadius: '24px', fontSize: '15px',
+                      color: 'rgba(201,168,76,0.9)',
                       background: 'rgba(201,168,76,0.1)',
                       border: '1px solid rgba(201,168,76,0.3)',
                     },
@@ -124,6 +102,7 @@ export default async function handler() {
       { width: 1200, height: 630 }
     );
   } catch (e) {
+    // Fallback: redirect to static SVG
     return Response.redirect('/og.svg', 302);
   }
 }
