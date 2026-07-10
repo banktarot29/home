@@ -889,7 +889,14 @@ function bindSlipUpload(){
       var resp=await fetch('/api/verify-slip',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({slipB64:img.b64,slipMime:img.mime,ref:ref,amount:199})});
       var d=await resp.json().catch(function(){return {};});
       if(resp.ok && d && d.verified===true){
-        if(statusEl){statusEl.className='report199-status ok';statusEl.textContent='✓ ยืนยันสลิปแล้ว ทีมงานจะส่งรายงานให้ทาง LINE ภายในไม่กี่นาที';}
+        // v15.1: สลิปผ่านตรวจ + มีผลวิเคราะห์ในหน้านี้ → ส่งรายงาน PDF ให้ทันที ไม่ต้องรอแอดมิน
+        // ถ้าไม่มีผลในหน้า (เช่น refresh มาก่อนโอน) ตกกลับ flow เดิม: แอดมินส่งทาง LINE
+        if(window._lastResult){
+          if(statusEl){statusEl.className='report199-status ok';statusEl.textContent='✓ ยืนยันสลิปแล้ว กดปุ่มด้านล่างเพื่อรับรายงานเฉพาะบ้านคุณได้ทันที';}
+          showReport199DownloadBtn();
+        }else{
+          if(statusEl){statusEl.className='report199-status ok';statusEl.textContent='✓ ยืนยันสลิปแล้ว ทีมงานจะส่งรายงานให้ทาง LINE ภายในไม่กี่นาที';}
+        }
         trackEvent('report199_slip_verified',{ref:ref});
       }else if(resp.ok && d && d.verified===false){
         if(statusEl){statusEl.className='report199-status warn';statusEl.textContent='ยังตรวจสอบสลิปนี้ไม่ได้ กรุณากดปุ่มด้านล่างเพื่อแจ้งแอดมินโดยตรง';}
@@ -903,6 +910,77 @@ function bindSlipUpload(){
   };
 }
 bindSlipUpload();
+
+/* ===== v15.1: รายงาน PDF 199฿ อัตโนมัติ =====
+   สร้างรายงานจากผลวิเคราะห์จริงของบ้านหลังนั้น (window._lastResult) ฝั่ง browser ทั้งหมด
+   - ปลดล็อคเมื่อสลิปผ่าน SlipOK (verified===true) เท่านั้น — โหมด manual ยังเป็น flow แอดมินส่ง LINE เหมือนเดิม
+   - จุดล็อค 🔒 ในรายงานยังคงสถานะ "ควรดูพื้นที่จริงประกอบ" ตามกติกา (ผูกกับ 12,999฿ ไม่ใช่ 199฿)
+   - เจ้าของทดสอบเองได้จาก console: _sinsaeTestReport() หลังวิเคราะห์เสร็จ */
+function _loadScript(src){return new Promise(function(res,rej){var s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
+async function _ensurePdfLibs(){
+  if(!window.html2canvas) await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+  if(!(window.jspdf&&window.jspdf.jsPDF)) await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+}
+function _buildReportDom(R,ref){
+  var d=new Date();var dateTh=d.getDate()+'/'+(d.getMonth()+1)+'/'+(d.getFullYear()+543);
+  var el=document.createElement('div');
+  el.style.cssText='position:fixed;left:-10000px;top:0;width:794px;background:#0b1624;color:#e9e4d8;font-family:Sarabun,sans-serif;padding:48px 52px;box-sizing:border-box;';
+  function sec(title,inner){return '<div style="margin-top:26px"><div style="color:#c9a84c;font-size:15px;font-weight:700;letter-spacing:1px;border-bottom:1px solid rgba(201,168,76,.35);padding-bottom:6px;margin-bottom:12px">'+title+'</div>'+inner+'</div>';}
+  function items(arr,color){return (arr||[]).map(function(it){return '<div style="margin-bottom:10px;padding:10px 14px;background:rgba(255,255,255,.04);border-left:3px solid '+color+';border-radius:6px"><div style="font-weight:700;font-size:14px;margin-bottom:3px">'+escapeHtml(it.title)+'</div><div style="font-size:13px;line-height:1.65;color:rgba(233,228,216,.85)">'+escapeHtml(it.desc||it.hint||'')+'</div></div>';}).join('');}
+  var fixOrder='';
+  (R.fixFree||[]).forEach(function(f,i){fixOrder+='<div style="margin-bottom:10px;padding:10px 14px;background:rgba(74,222,128,.06);border-left:3px solid #4ade80;border-radius:6px"><div style="font-weight:700;font-size:14px">ลำดับที่ '+(i+1)+' · ทำเองได้ทันที — '+escapeHtml(f.title)+'</div><div style="font-size:13px;line-height:1.65;color:rgba(233,228,216,.85)">'+escapeHtml(f.desc)+'</div></div>';});
+  (R.fixLocked||[]).forEach(function(f,i){fixOrder+='<div style="margin-bottom:8px;padding:9px 14px;background:rgba(255,255,255,.03);border-left:3px solid rgba(201,168,76,.5);border-radius:6px"><div style="font-weight:700;font-size:13.5px">ลำดับที่ '+((R.fixFree||[]).length+i+1)+' · ควรดูพื้นที่จริงประกอบ — '+escapeHtml(f.title)+'</div><div style="font-size:12.5px;line-height:1.6;color:rgba(233,228,216,.75)">'+escapeHtml(f.hint||'')+'</div></div>';});
+  el.innerHTML=
+    '<div style="text-align:center;padding-bottom:18px;border-bottom:2px solid rgba(201,168,76,.5)">'
+    +'<div style="color:#c9a84c;font-size:13px;letter-spacing:4px">ซินแสแบงค์</div>'
+    +'<div style="font-size:24px;font-weight:700;margin-top:6px">รายงานฮวงจุ้ยเฉพาะบ้านคุณ</div>'
+    +'<div style="font-size:12px;color:rgba(233,228,216,.6);margin-top:6px">รหัสอ้างอิง '+escapeHtml(ref)+' · จัดทำเมื่อ '+dateTh+'</div></div>'
+    +'<div style="display:flex;gap:20px;align-items:center;margin-top:24px">'
+    +'<div style="width:96px;height:96px;border-radius:50%;border:3px solid #c9a84c;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:700;color:#c9a84c;flex-shrink:0">'+R.score+'</div>'
+    +'<div><div style="font-size:17px;font-weight:700">'+escapeHtml(R.archetype||R.headline||'')+'</div>'
+    +'<div style="font-size:13.5px;color:rgba(233,228,216,.8);margin-top:4px">'+escapeHtml(R.scoreLabel||'')+'</div>'
+    +'<div style="font-size:13px;color:rgba(233,228,216,.7);margin-top:4px">'+escapeHtml(R.headline||'')+'</div></div></div>'
+    +sec('ภาพรวมพลังงานบ้านหลังนี้','<div style="font-size:13.5px;line-height:1.75">'+escapeHtml((R.frontPart&&R.frontPart.desc)||'')+'</div><div style="font-size:13.5px;line-height:1.75;margin-top:10px">'+escapeHtml(R.omen||'')+'</div>')
+    +sec('จุดที่พบจากภาพบ้านคุณ',items(R.observations,'#c9a84c'))
+    +sec('สิ่งที่บ้านกำลังส่งเสริมอยู่',items(R.good,'#4ade80'))
+    +sec('จุดที่กำลังขัดพลังงานบ้าน',items(R.bad,'#f87171'))
+    +sec('ลำดับการปรับ ก่อน–หลัง',fixOrder)
+    +'<div style="margin-top:30px;padding:16px;border:1px solid rgba(201,168,76,.4);border-radius:8px;text-align:center">'
+    +'<div style="font-size:13.5px;line-height:1.7">จุดที่ระบุว่า "ควรดูพื้นที่จริงประกอบ" นัดซินแสแบงค์ดูหน้างานจริงได้ทาง LINE: lin.ee/qLCFQpj</div></div>'
+    +'<div style="margin-top:18px;font-size:11px;color:rgba(233,228,216,.5);text-align:center">รายงานนี้วิเคราะห์จากภาพและข้อมูลที่ได้รับ อาจคลาดเคลื่อนได้เนื่องจากไม่ได้ดูหน้างานจริง · © ซินแสแบงค์</div>';
+  document.body.appendChild(el);
+  return el;
+}
+async function generateReport199Pdf(){
+  var R=window._lastResult;var ref=report199RefCode();
+  if(!R){alert('ไม่พบผลวิเคราะห์ในหน้านี้ ทีมงานจะส่งรายงานให้ทาง LINE ตามปกติครับ');return;}
+  var el=null;
+  try{
+    await _ensurePdfLibs();
+    el=_buildReportDom(R,ref);
+    var canvas=await html2canvas(el,{scale:2,backgroundColor:'#0b1624',useCORS:true});
+    var jsPDF=window.jspdf.jsPDF;var pdf=new jsPDF({unit:'mm',format:'a4'});
+    var pageW=210,pageH=297;var imgW=pageW;var imgH=canvas.height*pageW/canvas.width;
+    var img=canvas.toDataURL('image/jpeg',0.92);
+    var pos=0,page=0;
+    while(pos<imgH){if(page>0)pdf.addPage();pdf.addImage(img,'JPEG',0,-pos,imgW,imgH);pos+=pageH;page++;}
+    pdf.save('sinsaebank-report-'+ref+'.pdf');
+    trackEvent('report199_pdf_downloaded',{ref:ref});
+  }catch(e){
+    console.error('pdf error',e);
+    alert('สร้างไฟล์รายงานไม่สำเร็จ ทีมงานจะส่งให้ทาง LINE แทนครับ');
+  }finally{if(el&&el.parentNode)el.parentNode.removeChild(el);}
+}
+function showReport199DownloadBtn(){
+  if(document.getElementById('report199-dl-btn'))return;
+  var statusEl=document.getElementById('report199-status');if(!statusEl)return;
+  var b=document.createElement('button');b.id='report199-dl-btn';
+  b.textContent='⬇ ดาวน์โหลดรายงานบ้านคุณ (PDF)';
+  b.style.cssText='display:block;width:100%;margin-top:10px;padding:13px;background:linear-gradient(135deg,#c9a84c,#e8d48b);color:#0b1624;font-weight:700;font-size:15px;border:none;border-radius:10px;cursor:pointer;font-family:Sarabun,sans-serif';
+  b.onclick=function(){generateReport199Pdf();};
+  statusEl.parentNode.insertBefore(b,statusEl.nextSibling);
+}
+window._sinsaeTestReport=generateReport199Pdf;
 /* ===== end Report199 ===== */
 var qDefs=[
   {key:'type',id:'q-type',items:[
@@ -1195,6 +1273,7 @@ async function doAnalyze(){
     await delay(500);stepDone('ls3',steps[1][1]);
     await delay(500);stepDone('ls4',steps[2][1]);
     await delay(400);
+    window._lastResult=R; // v15.1: เก็บผลไว้ใช้สร้างรายงาน PDF 199฿
     renderResult(R);
     if(window._clearLoadTimer) window._clearLoadTimer();
     window.scrollTo({top:0,behavior:'smooth'});
