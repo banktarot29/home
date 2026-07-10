@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="th">
 <head>
 <meta charset="UTF-8">
@@ -1181,7 +1181,15 @@ async function doAnalyze(){
          fixFree:(ar.fix||[]).slice(0,2),
          fixLocked:(ar.fix||[]).slice(2,8).map(function(f){return {title:f.title||'จุดที่ควรให้ซินแสดูต่อ',hint:f.desc||'ควรวิเคราะห์ร่วมกับพื้นที่จริง'};}),
          omen:ar.omen,archetype:ar.archetype,archetypeTags:ar.archetypeTags};
-    }catch(e){console.log('API fallback:',e.message);trackEvent('fengshui_analyze_fallback',{reason:String(e.message||'').slice(0,80)});R=buildResult(SEL);R.observations.unshift({title:'รอบนี้ยังอ่านภาพละเอียดไม่สำเร็จ',desc:'รายงานนี้จึงเป็นภาพรวมเบื้องต้นจากข้อมูลที่เลือก หากต้องการผลที่เจาะจากภาพจริง แนะนำให้ลองแนบภาพหน้าบ้านที่ชัดอีกครั้ง โดยให้เห็นประตูหลัก ทางเดิน และพื้นที่หน้าบ้านครบ'});}
+    }catch(e){
+      // v15: ตัด silent fallback ออก — เดิมถ้า API ล้ม จะสร้างผลจำลอง (buildResult) ที่หน้าตาเหมือน
+      // ผลวิเคราะห์จริงทุกอย่าง ผู้ใช้แยกไม่ออกและอาจตัดสินใจซื้อรายงาน 199฿ จากข้อมูลปลอม
+      // เปลี่ยนเป็นโยน error ไปให้ตัวจัดการด้านล่างแจ้งตรงๆ แล้วพากลับหน้ากรอกข้อมูล
+      // (ภาพ+ตัวเลือกเดิมยังอยู่ครบ กดปุ่ม "ดูผลวิเคราะห์" ซ้ำได้ทันที = retry ในตัว)
+      // หมายเหตุ: buildResult() ยังอยู่ในไฟล์แต่ไม่ถูกเรียกจาก flow นี้แล้ว เก็บไว้เผื่อโหมด demo
+      trackEvent('fengshui_analyze_fallback',{reason:String(e.message||'').slice(0,80)});
+      throw e;
+    }
 
     await delay(500);stepDone('ls2','อ่านภาพบ้านแล้ว ✓');
     await delay(500);stepDone('ls3',steps[1][1]);
@@ -1192,15 +1200,18 @@ async function doAnalyze(){
     window.scrollTo({top:0,behavior:'smooth'});
   }catch(err){
     console.error(err);
+    // v15: เคลียร์ timer ของหน้า loading ก่อนออก — เดิมถ้า error ระหว่างโหลด
+    // progress bar + tip rotation จะยังวิ่งค้างอยู่เบื้องหลังไม่มีใครหยุด
+    if(window._clearLoadTimer) window._clearLoadTimer();
     var msg=err.message||'เกิดข้อผิดพลาด';
     if(msg.includes('429')||msg.includes('rate')||msg.includes('บ่อยเกินไป')){
       alert('ส่งคำขอบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่');
     } else if(msg.includes('413')||msg.includes('ใหญ่เกินไป')){
       alert('ภาพที่แนบขนาดใหญ่เกินไป กรุณาลดขนาดภาพแล้วลองใหม่');
     } else if(msg.includes('timeout')||msg.includes('504')){
-      alert('การวิเคราะห์ใช้เวลานานเกินไป กรุณาลองใหม่อีกครั้ง');
+      alert('รอบนี้ระบบอ่านภาพไม่ทันเวลา จึงยังไม่แสดงผลเพื่อไม่ให้ได้ข้อมูลคลาดเคลื่อน\n\nภาพและข้อมูลที่เลือกไว้ยังอยู่ครบ กดปุ่ม "ดูผลวิเคราะห์บ้านฉัน" อีกครั้งได้เลยครับ');
     } else {
-      alert('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+      alert('รอบนี้ยังวิเคราะห์ไม่สำเร็จ ภาพและข้อมูลที่เลือกไว้ยังอยู่ครบ\nกดปุ่ม "ดูผลวิเคราะห์บ้านฉัน" อีกครั้งได้เลยครับ');
     }
     show('survey');
   } finally {
